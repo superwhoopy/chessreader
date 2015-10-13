@@ -1,3 +1,7 @@
+'''TODO
+'''
+from __future__ import print_function
+
 import sys
 import colorama
 
@@ -19,9 +23,10 @@ def error(msg):
     sys.exit(42)
 
 
-do_show_debug_messages = False
 def debug(msg):
-    if not do_show_debug_messages:
+    if not debug.do_show_debug_messages:
         return
     print('{}[DEBUG]{} {}'.format(colorama.Fore.CYAN, colorama.Fore.RESET, msg))
+
+debug.do_show_debug_messages = False
 

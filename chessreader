@@ -1,5 +1,5 @@
 #!/bin/bash
 
-PYTHON3=/usr/bin/python3
+PYTHON=/usr/bin/python3
 
-${PYTHON3} __init__.py ${*}
+${PYTHON} __init__.py ${*}

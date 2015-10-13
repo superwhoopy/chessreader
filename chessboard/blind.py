@@ -1,6 +1,6 @@
 class BlindChessboard:
 
-    occupied_squares = {}
+    occupied_squares = set()
 
     def __init__(self):
         pass

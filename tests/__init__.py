@@ -1,11 +1,3 @@
-import unittest
 
-import log
-
-################################################################################
-
-def run():
-    log.debug("Running freakin' tests...")
-    unittest.main()
-    return
-
+if __name__ == '__main__':
+    pass

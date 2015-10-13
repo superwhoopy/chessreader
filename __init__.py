@@ -6,8 +6,8 @@ import sys
 import colorama
 
 import imgprocessor
+import chessboard
 import log
-import tests
 
 ################################################################################
 
@@ -39,14 +39,14 @@ def main(parsed_args):
     colorama.init()
 
     # Enable debug messages?
-    log.do_show_debug_messages = parsed_args.debug
+    log.debug.do_show_debug_messages = parsed_args.debug
 
     # Launch test suite?
     if parsed_args.test:
-        tests.run()
         sys.exit(0)
 
     sys.exit(0)
+
 
 if __name__ == '__main__':
     PARSED_ARGS = parse_arguments()
