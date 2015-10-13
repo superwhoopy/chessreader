@@ -5,8 +5,9 @@ import argparse
 import sys
 import colorama
 
-import imgprocessor
 import chessboard
+import imgprocessor
+import tests
 import log
 
 ################################################################################
@@ -43,6 +44,7 @@ def main(parsed_args):
 
     # Launch test suite?
     if parsed_args.test:
+        tests.run()
         sys.exit(0)
 
     sys.exit(0)
