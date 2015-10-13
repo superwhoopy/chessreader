@@ -8,7 +8,7 @@ import colorama
 import chessboard
 import imgprocessor
 import tests
-import log
+import utils.log
 
 ################################################################################
 
@@ -40,10 +40,11 @@ def main(parsed_args):
     colorama.init()
 
     # Enable debug messages?
-    log.debug.do_show_debug_messages = parsed_args.debug
+    utils.log.debug.do_show_debug_messages = parsed_args.debug
 
     # Launch test suite?
     if parsed_args.test:
+        utils.log.info("running chessreader test base")
         tests.run()
         sys.exit(0)
 
