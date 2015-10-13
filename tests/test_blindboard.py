@@ -3,9 +3,9 @@
 
 import unittest
 import utils.log
-import chessboard
+import chessboard.blind
 
-class BlindBoardTest(unittest.TestCase):
+class BoardTest(unittest.TestCase):
 
     def test_square_name(self):
         squares = {
@@ -21,3 +21,12 @@ class BlindBoardTest(unittest.TestCase):
                     chessboard.square_name(value[0], value[1]))
 
         return
+
+    def test_BlindBoard_moves(self):
+        board_from = chessboard.blind.BlindChessboard({'a1', 'e2'})
+        board_to   = chessboard.blind.BlindChessboard({'a1', 'e4'})
+        emptied, filled = board_from.find_moves(board_to)
+
+        self.assertEqual(emptied, {'e2'})
+        self.assertEqual(filled,  {'e4'})
+
