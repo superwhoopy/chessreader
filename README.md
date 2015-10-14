@@ -4,11 +4,13 @@ A chessboard live analyzer.
 
 ## Dependencies
 
-The following Python libraries are mandatory:
+Chessreader requires Python >= 3.4. The following Python libraries are
+mandatory:
 
   * scikit-image
     * numpy
     * scipy
   * colorama, for colorful console messages - because color is life!
+  * nose, for unit tests
 
 <!-- vim: set ft=markdown: -->
