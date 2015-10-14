@@ -2,7 +2,7 @@
 '''
 
 import unittest
-import utils.log
+import nose.tools
 import chessboard.blind
 
 class BoardTest(unittest.TestCase):
@@ -20,13 +20,34 @@ class BoardTest(unittest.TestCase):
             self.assertEqual(key,
                     chessboard.square_name(value[0], value[1]))
 
-        return
+    @nose.tools.raises(chessboard.SquareOutOfBounds)
+    def test_square_coordinates_exception_0(self):
+        chessboard.square_coordinates('i0')
 
-    def test_BlindBoard_moves(self):
+    @nose.tools.raises(chessboard.SquareOutOfBounds)
+    def test_square_coordinates_exception_1(self):
+        chessboard.square_coordinates('i1')
+
+    @nose.tools.raises(chessboard.MalformedSquareName)
+    def test_square_coordinates_exception_2(self):
+        chessboard.square_coordinates('a-2')
+
+    @nose.tools.raises(chessboard.SquareOutOfBounds)
+    def test_square_name_exception(self):
+        chessboard.square_name(-1, 12)
+
+    def test_BlindBoard_moves_0(self):
         board_from = chessboard.blind.BlindChessboard({'a1', 'e2'})
         board_to   = chessboard.blind.BlindChessboard({'a1', 'e4'})
-        emptied, filled = board_from.find_moves(board_to)
+        emptied, filled = chessboard.blind.find_moves(board_from, board_to)
 
         self.assertEqual(emptied, {'e2'})
         self.assertEqual(filled,  {'e4'})
 
+    def test_BlindBoard_moves_1(self):
+        board_from = chessboard.blind.BlindChessboard({'a1', 'e2'})
+        board_to   = chessboard.blind.BlindChessboard({'a1', 'e2'})
+        emptied, filled = chessboard.blind.find_moves(board_from, board_to)
+
+        self.assertFalse(emptied)
+        self.assertFalse(filled)
