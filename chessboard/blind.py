@@ -1,13 +1,5 @@
 import chessboard
 
-def find_moves(from_board, to_board):
-    '''TODO
-    '''
-    emptied_squares = from_board.occupied_squares - to_board.occupied_squares
-    filled_squares  = to_board.occupied_squares - from_board.occupied_squares
-    return emptied_squares, filled_squares
-
-
 class BlindChessboard:
     '''TODO
     '''
@@ -20,6 +12,14 @@ class BlindChessboard:
         for square in occupied_squares:
             assert square in chessboard.ALL_SQUARES
         self.occupied_squares = occupied_squares
+
+    def __eq__(self, other):
+        return self.occupied_squares == other.occupied_squares
+
+    def __sub__(self, other):
+        emptied_squares = other.occupied_squares - self.occupied_squares
+        filled_squares  = self.occupied_squares - other.occupied_squares
+        return emptied_squares, filled_squares
 
     def clear(self):
         self.occupied_squares = set()

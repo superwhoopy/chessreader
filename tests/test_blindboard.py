@@ -39,7 +39,7 @@ class BoardTest(unittest.TestCase):
     def test_BlindBoard_moves_0(self):
         board_from = chessboard.blind.BlindChessboard({'a1', 'e2'})
         board_to   = chessboard.blind.BlindChessboard({'a1', 'e4'})
-        emptied, filled = chessboard.blind.find_moves(board_from, board_to)
+        emptied, filled = board_to - board_from
 
         self.assertEqual(emptied, {'e2'})
         self.assertEqual(filled,  {'e4'})
@@ -47,7 +47,7 @@ class BoardTest(unittest.TestCase):
     def test_BlindBoard_moves_1(self):
         board_from = chessboard.blind.BlindChessboard({'a1', 'e2'})
         board_to   = chessboard.blind.BlindChessboard({'a1', 'e2'})
-        emptied, filled = chessboard.blind.find_moves(board_from, board_to)
+        emptied, filled = board_to - board_from
 
         self.assertFalse(emptied)
         self.assertFalse(filled)
