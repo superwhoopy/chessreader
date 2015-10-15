@@ -1,6 +1,5 @@
 import imgprocessor
 import chess
-import chessboard
 import utils
 
 class IllegalMove(Exception):
@@ -30,7 +29,7 @@ class Core:
     def __init__(self):
         self.capture_engine = imgprocessor.CaptureEngine()
         self.chess_engine   = chess.ChessEngine()
-        self.last_valid_chessboard = chessboard.blind.BlindChessboard()
+        self.last_valid_chessboard = chess.board.BlindBoard()
 
     def run(self):
         pass

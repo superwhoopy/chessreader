@@ -5,7 +5,7 @@ import argparse
 import sys
 import colorama
 
-import chessboard
+import chess
 import imgprocessor
 import tests
 import utils.log
