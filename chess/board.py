@@ -1,4 +1,5 @@
 import string
+from itertools import zip_longest
 
 import chess
 

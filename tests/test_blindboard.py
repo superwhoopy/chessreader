@@ -34,7 +34,7 @@ def test_square_name_exception():
     chess.board.square_name(-1, 12)
 
 
-def test_BlindBoard_moves_0():
+def test_BlindBoard_moves():
     board_from = chess.board.BlindBoard({'a1': PlayerColor.WHITE,
                                          'a7': PlayerColor.BLACK,
                                          'a8': PlayerColor.BLACK,
@@ -49,7 +49,7 @@ def test_BlindBoard_moves_0():
     nose.tools.eq_(filled,  ['e4'])
     nose.tools.eq_(changed, ['a8'])
 
-def test_BlindBoard_identical_board():
+def test_BlindBoard_identical():
     board_from = chess.board.BlindBoard({'a1': PlayerColor.WHITE,
                                          'a7': PlayerColor.BLACK,
                                          'a8': PlayerColor.BLACK,
