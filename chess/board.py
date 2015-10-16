@@ -71,7 +71,7 @@ class BlindBoard:
             [ s for s in self.occupied_squares
                     if s in other.occupied_squares and
                        other.occupied_squares[s] ==
-                           chess.opposite_color(self.occupied_squares[s]) ]
+                           chess.Color.opposite(self.occupied_squares[s]) ]
 
         return emptied_squares, filled_squares, changed_squares
 

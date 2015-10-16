@@ -4,14 +4,16 @@ class PlayMode(Enum):
     ONE_PLAYER = 1
     TWO_PLAYERS = 2
 
-class PlayerColor(Enum):
+class Color(Enum):
     WHITE = 1
     BLACK = 2
 
-def opposite_color(color):
-    assert color in PlayerColor
-    return PlayerColor.WHITE if color == PlayerColor.BLACK \
-           else PlayerColor.BLACK
+    @staticmethod
+    def opposite(color):
+        assert color in Color
+        return Color.WHITE if color == Color.BLACK \
+               else Color.BLACK
+
 
 class ChessEngine:
 
