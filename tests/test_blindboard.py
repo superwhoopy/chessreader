@@ -3,7 +3,7 @@
 
 import nose.tools
 import chess.board
-from chess import PlayerColor
+from chess import Color
 
 def test_square_name():
     squares = {
@@ -35,32 +35,32 @@ def test_square_name_exception():
 
 
 def test_BlindBoard_moves():
-    board_from = chess.board.BlindBoard({'a1': PlayerColor.WHITE,
-                                         'a7': PlayerColor.BLACK,
-                                         'a8': PlayerColor.BLACK,
-                                         'e2': PlayerColor.WHITE})
-    board_to   = chess.board.BlindBoard({'a1': PlayerColor.WHITE,
-                                         'a7': PlayerColor.BLACK,
-                                         'a8': PlayerColor.WHITE,
-                                         'e4': PlayerColor.WHITE})
-    emptied, filled, changed = board_to - board_from
+    board_from = chess.board.BlindBoard({'a1': Color.WHITE,
+                                         'a7': Color.BLACK,
+                                         'a8': Color.BLACK,
+                                         'e2': Color.WHITE})
+    board_to   = chess.board.BlindBoard({'a1': Color.WHITE,
+                                         'a7': Color.BLACK,
+                                         'a8': Color.WHITE,
+                                         'e4': Color.WHITE})
+    diff = board_to.diff(board_from)
 
-    nose.tools.eq_(emptied, ['e2'])
-    nose.tools.eq_(filled,  ['e4'])
-    nose.tools.eq_(changed, ['a8'])
+    nose.tools.eq_(diff.emptied, ['e2'])
+    nose.tools.eq_(diff.filled,  ['e4'])
+    nose.tools.eq_(diff.changed, ['a8'])
 
 def test_BlindBoard_identical():
-    board_from = chess.board.BlindBoard({'a1': PlayerColor.WHITE,
-                                         'a7': PlayerColor.BLACK,
-                                         'a8': PlayerColor.BLACK,
-                                         'e2': PlayerColor.WHITE})
-    board_to   = chess.board.BlindBoard({'a1': PlayerColor.WHITE,
-                                         'a7': PlayerColor.BLACK,
-                                         'a8': PlayerColor.BLACK,
-                                         'e2': PlayerColor.WHITE})
-    emptied, filled, changed = board_to - board_from
+    board_from = chess.board.BlindBoard({'a1': Color.WHITE,
+                                         'a7': Color.BLACK,
+                                         'a8': Color.BLACK,
+                                         'e2': Color.WHITE})
+    board_to   = chess.board.BlindBoard({'a1': Color.WHITE,
+                                         'a7': Color.BLACK,
+                                         'a8': Color.BLACK,
+                                         'e2': Color.WHITE})
+    diff = board_to.diff(board_from)
 
-    nose.tools.ok_(not emptied)
-    nose.tools.ok_(not filled)
-    nose.tools.ok_(not changed)
+    nose.tools.ok_(not diff.emptied)
+    nose.tools.ok_(not diff.filled)
+    nose.tools.ok_(not diff.changed)
 

@@ -10,19 +10,32 @@ class IllegalMove(Exception):
         return self.msg
 
 
-def compute_move(filled_squares, emptied_squares):
-    if len(filled_squares) > 1 or len(emptied_squares) > 1:
-        errmsg = 'too many pieces seem to have moved: emptied[{}], filled' \
-                 '[{}]'.format(emptied_squares, filled_squares)
-        raise IllegalMove(errmsg)
+def interpret_move(blind_board_diff):
+    # aliases
+    emptied = blind_board_diff.emptied
+    filled = blind_board_diff.filled
+    changed = blind_board_diff.changed
 
-    if len(filled_squares) == 1 and len(emptied_squares) == 0:
-        errmsg = \
-            'a piece seem to have appeared out of nowhere in {}'.format(
-                filled_squares)
-        raise IllegalMove(errmsg)
+    utils.log.debug("Diffing boards E: {} F: {} C:{}".format(emptied,
+        filled, changed))
 
-    pass
+    if len(filled) > 1 or len(emptied) > 1:
+        raise IllegalMove(
+                 'too many pieces seem to have moved: emptied[{}], filled' \
+                 '[{}]'.format(emptied, filled))
+
+    if len(filled) == 1 and len(emptied) == 0:
+        raise IllegalMove(
+                'a piece seem to have appeared out of nowhere in {}'.format(
+                filled))
+
+    if len(changed) > 1:
+        raise IllegalMove(
+                'several pieces have changed color in: {}'.format(changed))
+
+    # TODO: analysis of changed pieces?
+
+    return move
 
 
 class Core:
@@ -39,9 +52,9 @@ class Core:
         if new_chessboard == self.last_valid_chessboard:
             pass
 
-        filled, emptied = new_chessboard - self.last_valid_chessboard
+        board_diff = new_chessboard.diff(self.last_valid_chessboard)
         try:
-            move = compute_move(filled, emptied)
+            move = interpret_move(board_diff)
         except IllegalMove as m:
             utils.log.warn(m)
             pass

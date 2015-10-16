@@ -40,9 +40,26 @@ def square_coordinates(square):
 
 ################################################################################
 
+class Move:
+    def __init__(self, from_square, to_square):
+        assert from_square in ALL_SQUARES
+        assert to_square   in ALL_SQUARES
+        self.from_square = from_square
+        self.to_square = to_square
+
+    def __str__(self):
+        return '{}{}'.format(self.from_square, self.to_square)
+
+################################################################################
+
 class BlindBoard:
     '''TODO
     '''
+
+    class Diff:
+        emptied = []
+        filled = []
+        changed = []
 
     occupied_squares = dict()
 
@@ -52,33 +69,36 @@ class BlindBoard:
         for square, color in occupied_squares.items():
             # TODO: assert or exceptions?
             assert square in ALL_SQUARES
-            assert color  in chess.PlayerColor
+            assert color  in chess.Color
         self.occupied_squares = occupied_squares
 
     def __eq__(self, other):
         return self.occupied_squares == other.occupied_squares
 
-    def __sub__(self, other):
-        emptied_squares = \
+    def diff(self, other):
+        d = BlindBoard.Diff()
+        d.emptied = \
             [ s for s in other.occupied_squares
                     if s not in self.occupied_squares ]
 
-        filled_squares = \
+        d.filled = \
             [ s for s in self.occupied_squares
                     if s not in other.occupied_squares ]
 
-        changed_squares = \
+        d.changed = \
             [ s for s in self.occupied_squares
                     if s in other.occupied_squares and
                        other.occupied_squares[s] ==
                            chess.Color.opposite(self.occupied_squares[s]) ]
 
-        return emptied_squares, filled_squares, changed_squares
+        return d
 
     def clear(self):
         self.occupied_squares = dict()
 
     def add_piece(self, square, color):
         assert square in ALL_SQUARES
-        assert color  in chess.PlayerColor
+        assert color  in chess.Color
         self.occupied_squares[square] = color
+
+
