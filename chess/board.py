@@ -38,17 +38,6 @@ def square_coordinates(square):
 
     return x_pos, y_pos
 
-################################################################################
-
-class Move:
-    def __init__(self, from_square, to_square):
-        assert from_square in ALL_SQUARES
-        assert to_square   in ALL_SQUARES
-        self.from_square = from_square
-        self.to_square = to_square
-
-    def __str__(self):
-        return '{}{}'.format(self.from_square, self.to_square)
 
 ################################################################################
 
@@ -60,6 +49,12 @@ class BlindBoard:
         emptied = []
         filled = []
         changed = []
+
+    @staticmethod
+    def diff_board(board_to, board_from):
+        return board_to.diff(board_from)
+
+    ########################################
 
     occupied_squares = dict()
 
@@ -75,23 +70,23 @@ class BlindBoard:
     def __eq__(self, other):
         return self.occupied_squares == other.occupied_squares
 
-    def diff(self, other):
-        d = BlindBoard.Diff()
-        d.emptied = \
-            [ s for s in other.occupied_squares
+    def diff(self, board_from):
+        diff = BlindBoard.Diff()
+        diff.emptied = \
+            [ s for s in board_from.occupied_squares
                     if s not in self.occupied_squares ]
 
-        d.filled = \
+        diff.filled = \
             [ s for s in self.occupied_squares
-                    if s not in other.occupied_squares ]
+                    if s not in board_from.occupied_squares ]
 
-        d.changed = \
+        diff.changed = \
             [ s for s in self.occupied_squares
-                    if s in other.occupied_squares and
-                       other.occupied_squares[s] ==
+                    if s in board_from.occupied_squares and
+                       board_from.occupied_squares[s] ==
                            chess.Color.opposite(self.occupied_squares[s]) ]
 
-        return d
+        return diff
 
     def clear(self):
         self.occupied_squares = dict()
