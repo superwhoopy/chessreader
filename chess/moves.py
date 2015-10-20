@@ -15,15 +15,15 @@ class Move:
         return '{}{}'.format(self.from_square, self.to_square)
 
 
-class CastlingMove(Move):
+class Castling(Move):
     class Side(Enum):
         KING = 0
         QUEEN = 1
 
     def __init__(self, side):
-        assert side in CastlingMove.Side
+        assert side in Castling.Side
         self.from_square = 'O-O'
-        self.to_square   = '-O' if side == CastlingMove.Side.QUEEN \
+        self.to_square   = '-O' if side == Castling.Side.QUEEN \
                                 else ''
 
 # TODO: PromotionMove?

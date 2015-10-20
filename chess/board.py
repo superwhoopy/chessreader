@@ -46,9 +46,23 @@ class BlindBoard:
     '''
 
     class Diff:
-        emptied = []
-        filled = []
-        changed = []
+        emptied = {}
+        filled = {}
+        changed = {}
+
+        def __init__(self, emptied, filled, changed):
+            self.emptied = emptied
+            self.filled = filled
+            self.changed = changed
+
+        def __eq__(self, other):
+            return self.emptied == other.emptied and \
+                   self.filled  == other.filled and \
+                   self.changed == other.changed
+
+        def __str__(self):
+            return "emp:{} fill:{} chgd:{}".format(self.emptied, self.filled,
+                                                    self.changed)
 
     @staticmethod
     def diff_board(board_to, board_from):
@@ -71,22 +85,21 @@ class BlindBoard:
         return self.occupied_squares == other.occupied_squares
 
     def diff(self, board_from):
-        diff = BlindBoard.Diff()
-        diff.emptied = \
-            [ s for s in board_from.occupied_squares
-                    if s not in self.occupied_squares ]
+        emptied = \
+            { s for s in board_from.occupied_squares
+                    if s not in self.occupied_squares }
 
-        diff.filled = \
-            [ s for s in self.occupied_squares
-                    if s not in board_from.occupied_squares ]
+        filled = \
+            { s for s in self.occupied_squares
+                    if s not in board_from.occupied_squares }
 
-        diff.changed = \
-            [ s for s in self.occupied_squares
+        changed = \
+            { s for s in self.occupied_squares
                     if s in board_from.occupied_squares and
                        board_from.occupied_squares[s] ==
-                           chess.Color.opposite(self.occupied_squares[s]) ]
+                           chess.Color.opposite(self.occupied_squares[s]) }
 
-        return diff
+        return chess.board.BlindBoard.Diff(emptied, filled, changed)
 
     def clear(self):
         self.occupied_squares = dict()
