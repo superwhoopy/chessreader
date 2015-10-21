@@ -64,6 +64,9 @@ class BlindBoard:
             return "emp:{} fill:{} chgd:{}".format(self.emptied, self.filled,
                                                     self.changed)
 
+        def length(self):
+            return [len(self.emptied), len(self.filled), len(self.changed)]
+
     @staticmethod
     def diff_board(board_to, board_from):
         return board_to.diff(board_from)

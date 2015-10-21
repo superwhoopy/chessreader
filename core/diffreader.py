@@ -4,11 +4,25 @@ import chess.board as board
 import utils
 
 def diff_is_take(diff):
-    pass
+    # take move: one filled, none emptied, one changed
+    return diff.length() == [1, 0, 1]
 
 def diff_is_simple_move(diff):
-    pass
+    # simple move: one filled, one emptied, zero changed
+    return diff.length() == [1, 1, 0]
 
+def diff_sanity_check(diff):
+    # sanity check on the board diff
+    AUTHORIZED_LENGTHS = [
+            [1, 1, 0], # simple move: 1 square cleared, 1 filled
+            [1, 0, 1], # take: 1 square cleared, 1 changed
+            [2, 2, 0], # castling
+        ]
+    if diff.length() not in AUTHORIZED_LENGTHS:
+        raise core.IllegalMove(
+             'too many pieces seem to have moved: {}'.format(blind_board_diff))
+
+################################################################################
 
 def interpret_diff(blind_board_diff):
     # aliases
@@ -18,17 +32,10 @@ def interpret_diff(blind_board_diff):
 
     utils.log.debug("diffing boards: {}".format(blind_board_diff))
 
-    # sanity check on the board diff
-    AUTHORIZED_LENGTHS = [
-            [1, 1, 0], # simple move: 1 square cleared, 1 filled
-            [1, 0, 1], # take: 1 square cleared, 1 changed
-            [2, 2, 0], # castling
-        ]
-    if [len(emptied), len(filled), len(changed)] not in AUTHORIZED_LENGTHS:
-        raise core.IllegalMove(
-             'too many pieces seem to have moved: {}'.format(blind_board_diff))
+    # sanity check: make sure this diff is not too odd...
+    diff_sanity_check(blind_board_diff)
 
-    # check for castling
+    # check for castling move
     CASTLING_MOVES = {
         board.BlindBoard.Diff({'e1', 'h1'}, {'f1','g1'}, {}) :
             moves.Castling(moves.Castling.Side.King),
@@ -43,8 +50,17 @@ def interpret_diff(blind_board_diff):
         utils.log.debug("castling move detected")
         return CASTLING_MOVES[blind_board_diff]
 
-    # promoting move
+    # check for promotion move
     # TODO
 
-    return move
+    # OK, this oughta be a simple move or a take
+    assert diff_is_simple_move(blind_board_diff) or \
+           diff_is_take(blind_board_diff)
+
+    from_square = blind_board_diff.emptied[0]
+    to_square   = blind_board_diff.changed[0] \
+                  if diff_is_take(blind_board_diff) else \
+                  blind_board_diff.filled[0]
+
+    return moves.Move(from_square, to_square)
 
