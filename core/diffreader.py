@@ -20,17 +20,17 @@ def diff_sanity_check(diff):
         ]
     if diff.length() not in AUTHORIZED_LENGTHS:
         raise core.IllegalMove(
-             'too many pieces seem to have moved: {}'.format(blind_board_diff))
+             'too many pieces seem to have moved: {}'.format(diff))
 
 ################################################################################
 
-def interpret_diff(blind_board_diff):
+def read(blind_board_diff):
     # aliases
     emptied = blind_board_diff.emptied
     filled = blind_board_diff.filled
     changed = blind_board_diff.changed
 
-    utils.log.debug("diffing boards: {}".format(blind_board_diff))
+    utils.log.debug("diffing: {}".format(blind_board_diff))
 
     # sanity check: make sure this diff is not too odd...
     diff_sanity_check(blind_board_diff)
@@ -57,10 +57,9 @@ def interpret_diff(blind_board_diff):
     assert diff_is_simple_move(blind_board_diff) or \
            diff_is_take(blind_board_diff)
 
-    from_square = blind_board_diff.emptied[0]
-    to_square   = blind_board_diff.changed[0] \
-                  if diff_is_take(blind_board_diff) else \
-                  blind_board_diff.filled[0]
+    from_square = emptied.pop()
+    to_square   = changed.pop() if diff_is_take(blind_board_diff) else \
+                  filled.pop()
 
     return moves.Move(from_square, to_square)
 

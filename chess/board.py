@@ -61,8 +61,9 @@ class BlindBoard:
                    self.changed == other.changed
 
         def __str__(self):
-            return "emp:{} fill:{} chgd:{}".format(self.emptied, self.filled,
-                                                    self.changed)
+            return "emp:{} fill:{} chgd:{}".format(str(self.emptied),
+                                                   str(self.filled),
+                                                   str(self.changed))
 
         def length(self):
             return [len(self.emptied), len(self.filled), len(self.changed)]
