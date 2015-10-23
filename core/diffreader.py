@@ -1,68 +1,85 @@
 import core
-import chess.moves as moves
-import chess.board as board
 import utils
 
-def diff_is_take(diff):
-    # take move: one filled, none emptied, one changed
-    return diff.length() == [1, 0, 1]
+from chess.moves import Castling, Move
+from chess.board import BlindBoard
 
-def diff_is_simple_move(diff):
-    # simple move: one filled, one emptied, zero changed
-    return diff.length() == [1, 1, 0]
+CASTLING_DIFF = {
+    Castling.Side.KING :
+        [ BlindBoard.Diff({'e1', 'h1'}, {'f1','g1'}, set()),
+          BlindBoard.Diff({'e8', 'h8'}, {'f8','g8'}, set()) ],
 
-def diff_sanity_check(diff):
-    # sanity check on the board diff
-    AUTHORIZED_LENGTHS = [
-            [1, 1, 0], # simple move: 1 square cleared, 1 filled
-            [1, 0, 1], # take: 1 square cleared, 1 changed
-            [2, 2, 0], # castling
-        ]
-    if diff.length() not in AUTHORIZED_LENGTHS:
-        raise core.IllegalMove(
-             'too many pieces seem to have moved: {}'.format(diff))
+    Castling.Side.QUEEN :
+        [ BlindBoard.Diff({'e1', 'a1'}, {'c1','d1'}, set()),
+          BlindBoard.Diff({'e8', 'a8'}, {'c8','d8'}, set()) ],
+}
 
-def diff_is_castling(diff):
-    pass
+CASTLING_MOVE_LENGTH = [2, 2, 0]
+TAKE_MOVE_LENGTH     = [1, 0, 1]
+SIMPLE_MOVE_LENGTH   = [1, 1, 0]
+AUTHORIZED_LENGTHS = [ SIMPLE_MOVE_LENGTH, TAKE_MOVE_LENGTH,
+                       CASTLING_MOVE_LENGTH ]
 
 ################################################################################
 
+def diff_is_take(diff):
+    # take move: one filled, none emptied, one changed
+    return diff.length() == TAKE_MOVE_LENGTH
+
+def diff_is_simple_move(diff):
+    # simple move: one filled, one emptied, zero changed
+    return diff.length() == SIMPLE_MOVE_LENGTH
+
+def diff_sanity_check(diff):
+    # sanity check on the board diff
+    if diff.length() not in AUTHORIZED_LENGTHS:
+        raise core.IllegalMove(
+             'odd move(s) detected in diff: {}'.format(diff))
+
+################################################################################
+
+def read_castling(diff):
+    if diff.length() != CASTLING_MOVE_LENGTH:
+        return False
+
+    for side, difflist in CASTLING_DIFF.items():
+        if diff in difflist:
+            return Castling(side)
+
+    raise core.IllegalMove('odd move(s) detected in diff: {}'.format(diff))
+
+
 def read(blind_board_diff):
     # aliases
-    emptied = blind_board_diff.emptied
-    filled = blind_board_diff.filled
-    changed = blind_board_diff.changed
-
-    utils.log.debug("diffing: {}".format(blind_board_diff))
+    utils.log.debug("reading diff: {}".format(blind_board_diff))
 
     # sanity check: make sure this diff is not too odd...
     diff_sanity_check(blind_board_diff)
 
     # check for castling move
-    CASTLING_MOVES = {
-        board.BlindBoard.Diff({'e1', 'h1'}, {'f1','g1'}, {}) :
-            moves.Castling(moves.Castling.Side.King),
-        board.BlindBoard.Diff({'e8', 'h8'}, {'f8','g8'}, {}) :
-            moves.Castling(moves.Castling.Side.King),
-        board.BlindBoard.Diff({'e1', 'a1'}, {'c1','d1'}, {}) :
-            moves.Castling(moves.Castling.Side.Queen),
-        board.BlindBoard.Diff({'e8', 'a8'}, {'c8','d8'}, {}) :
-            moves.Castling(moves.Castling.Side.Queen),
-    }
-    if blind_board_diff in CASTLING_MOVES:
-        utils.log.debug("castling move detected")
-        return CASTLING_MOVES[blind_board_diff]
+    castling_move = read_castling(blind_board_diff)
+    if castling_move:
+        utils.log.debug('read castling move {}'.format(castling_move))
+        return castling_move
 
-    # check for promotion move
-    # TODO
+    # TODO check for promotion move
 
-    # OK, this oughta be a simple move or a take
-    assert diff_is_simple_move(blind_board_diff) or \
-           diff_is_take(blind_board_diff)
+    # OK, so this oughta be a simple move or a take
+    if diff_is_simple_move(blind_board_diff):
+        utils.log.debug('diff is simple move')
+    elif diff_is_take(blind_board_diff):
+        utils.log.debug('diff is take move')
+    else:
+        utils.log.error('unreadable diff move')
 
-    from_square = emptied.pop()
-    to_square   = changed.pop() if diff_is_take(blind_board_diff) else \
-                  filled.pop()
+    from_square = blind_board_diff.get_single_emptied()
+    if diff_is_take(blind_board_diff):
+        to_square = blind_board_diff.get_single_changed()
+    else: # diff is simple move
+        to_square = blind_board_diff.get_single_filled()
 
-    return moves.Move(from_square, to_square)
+    move = Move(from_square, to_square)
+    utils.log.debug('read move {}'.format(move))
+
+    return move
 

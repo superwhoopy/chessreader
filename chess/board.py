@@ -1,9 +1,8 @@
-import string
-from itertools import zip_longest
 
 import chess
+import utils
 
-COL_NAMES = string.ascii_lowercase[:8]
+COL_NAMES = 'abcdefgh'
 ROW_NAMES = range(1, 9)
 
 ALL_SQUARES = [ '{}{}'.format(col, row) for col in COL_NAMES \
@@ -47,8 +46,20 @@ class BlindBoard:
 
     class Diff:
         emptied = {}
-        filled = {}
+        filled  = {}
         changed = {}
+
+        def get_single_emptied(self):
+            assert len(self.emptied) == 1
+            return next(iter(self.emptied))
+
+        def get_single_filled(self):
+            assert len(self.filled) == 1
+            return next(iter(self.filled))
+
+        def get_single_changed(self):
+            assert len(self.changed) == 1
+            return next(iter(self.changed))
 
         def __init__(self, emptied, filled, changed):
             self.emptied = emptied
@@ -68,6 +79,7 @@ class BlindBoard:
         def length(self):
             return [len(self.emptied), len(self.filled), len(self.changed)]
 
+
     @staticmethod
     def diff_board(board_to, board_from):
         return board_to.diff(board_from)
@@ -77,6 +89,7 @@ class BlindBoard:
     occupied_squares = dict()
 
     def __init__(self, occupied_squares=None):
+        utils.log.debug('create BlindBoard with {}'.format(occupied_squares))
         if occupied_squares is None:
             return
         for square, color in occupied_squares.items():

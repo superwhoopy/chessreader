@@ -14,6 +14,10 @@ class Move:
     def __str__(self):
         return '{}{}'.format(self.from_square, self.to_square)
 
+    def __eq__(self,other):
+        return self.from_square == other.from_square and \
+               self.to_square   == other.to_square
+
 
 class Castling(Move):
     class Side(Enum):
