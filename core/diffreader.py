@@ -22,6 +22,9 @@ def diff_sanity_check(diff):
         raise core.IllegalMove(
              'too many pieces seem to have moved: {}'.format(diff))
 
+def diff_is_castling(diff):
+    pass
+
 ################################################################################
 
 def read(blind_board_diff):

@@ -13,7 +13,7 @@ def test_simple_move_diff():
                     'e4': Color.WHITE,
                     'f2': Color.BLACK,
                 })
-    diff = chess.board.BlindBoard.diff_board(board_2, board_2)
+    diff = chess.board.BlindBoard.diff_board(board_2, board_1)
     move = core.diffreader.read(diff)
 
     nose.tools.eq_(str(move), 'e2e4', 'Expected e2e4 got {}'.format(str(move)))
