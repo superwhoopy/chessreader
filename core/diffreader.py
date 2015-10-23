@@ -22,15 +22,15 @@ AUTHORIZED_LENGTHS = [ SIMPLE_MOVE_LENGTH, TAKE_MOVE_LENGTH,
 
 ################################################################################
 
-def diff_is_take(diff):
+def _diff_is_take(diff):
     # take move: one filled, none emptied, one changed
     return diff.length() == TAKE_MOVE_LENGTH
 
-def diff_is_simple_move(diff):
+def _diff_is_simple_move(diff):
     # simple move: one filled, one emptied, zero changed
     return diff.length() == SIMPLE_MOVE_LENGTH
 
-def diff_sanity_check(diff):
+def _diff_sanity_check(diff):
     # sanity check on the board diff
     if diff.length() not in AUTHORIZED_LENGTHS:
         raise core.IllegalMove(
@@ -38,7 +38,7 @@ def diff_sanity_check(diff):
 
 ################################################################################
 
-def read_castling(diff):
+def _read_castling(diff):
     if diff.length() != CASTLING_MOVE_LENGTH:
         return False
 
@@ -54,10 +54,10 @@ def read(blind_board_diff):
     utils.log.debug("reading diff: {}".format(blind_board_diff))
 
     # sanity check: make sure this diff is not too odd...
-    diff_sanity_check(blind_board_diff)
+    _diff_sanity_check(blind_board_diff)
 
     # check for castling move
-    castling_move = read_castling(blind_board_diff)
+    castling_move = _read_castling(blind_board_diff)
     if castling_move:
         utils.log.debug('read castling move {}'.format(castling_move))
         return castling_move
@@ -65,15 +65,15 @@ def read(blind_board_diff):
     # TODO check for promotion move
 
     # OK, so this oughta be a simple move or a take
-    if diff_is_simple_move(blind_board_diff):
+    if _diff_is_simple_move(blind_board_diff):
         utils.log.debug('diff is simple move')
-    elif diff_is_take(blind_board_diff):
+    elif _diff_is_take(blind_board_diff):
         utils.log.debug('diff is take move')
     else:
         utils.log.error('unreadable diff move')
 
     from_square = blind_board_diff.get_single_emptied()
-    if diff_is_take(blind_board_diff):
+    if _diff_is_take(blind_board_diff):
         to_square = blind_board_diff.get_single_changed()
     else: # diff is simple move
         to_square = blind_board_diff.get_single_filled()

@@ -9,6 +9,7 @@ import chess
 import imgprocessor
 import tests
 import utils.log
+import shell
 
 ################################################################################
 
@@ -47,6 +48,9 @@ def main(parsed_args):
         utils.log.info("running chessreader test base")
         tests.run()
         sys.exit(0)
+
+    # default: call the shell
+    shell.Shell().cmdloop()
 
     sys.exit(0)
 
