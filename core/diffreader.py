@@ -1,6 +1,5 @@
 import core
 import utils
-from enum import Enum
 
 from chess.moves import Castling, Move
 from chess.board import BlindBoard
@@ -15,12 +14,13 @@ CASTLING_DIFF = {
           BlindBoard.Diff({'e8', 'a8'}, {'c8','d8'}, set()) ],
 }
 
-class DiffLength(Enum):
+class DiffLength:
     CASTLING = [2, 2, 0]
     TAKE     = [1, 0, 1]
     SIMPLE   = [1, 1, 0]
 
-EXPECTED_DIFF_LENGTH = [ l for l in DiffLength ]
+    # TODO: find a pythonic way to do this...
+    valid    = [ CASTLING, TAKE, SIMPLE ]
 
 ################################################################################
 
@@ -34,7 +34,7 @@ def _diff_is_simple_move(diff):
 
 def _diff_sanity_check(diff):
     # sanity check on the board diff
-    if diff.length() not in EXPECTED_DIFF_LENGTH:
+    if diff.length() not in DiffLength.valid:
         raise core.IllegalMove(
              'odd move(s) detected in diff: {}'.format(diff))
 
