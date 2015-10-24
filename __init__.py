@@ -1,5 +1,4 @@
-'''TODO
-'''
+'''chessreader init module '''
 
 import argparse
 import sys
@@ -13,7 +12,6 @@ import shell
 
 ################################################################################
 
-# TODO
 ARG_MAIN_HELP = ''
 
 ARG_TEST_HELP = \
@@ -23,8 +21,7 @@ ARG_DEBUG_HELP = \
     'Display debugging messages to stdout'
 
 def parse_arguments():
-    '''TODO
-    '''
+    '''Parse command-line arguments and return the parsed output'''
     parser = argparse.ArgumentParser(description=ARG_MAIN_HELP)
 
     parser.add_argument('--test', help=ARG_TEST_HELP, action="store_true")
@@ -36,7 +33,9 @@ def parse_arguments():
 ################################################################################
 
 def main(parsed_args):
-    '''TODO
+    '''Launch function
+
+        parsed_args: `argparse`-parsed command line arguments
     '''
     colorama.init()
 

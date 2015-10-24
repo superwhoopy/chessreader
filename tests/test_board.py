@@ -16,11 +16,11 @@ def test_square_name():
         nose.tools.eq_(key,
                 chess.board.square_name(value[0], value[1]))
 
-@nose.tools.raises(chess.board.SquareOutOfBounds)
+@nose.tools.raises(chess.board.MalformedSquareName)
 def test_square_coordinates_exception_0():
     chess.board.square_coordinates('i0')
 
-@nose.tools.raises(chess.board.SquareOutOfBounds)
+@nose.tools.raises(chess.board.MalformedSquareName)
 def test_square_coordinates_exception_1():
     chess.board.square_coordinates('i1')
 

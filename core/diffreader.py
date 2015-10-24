@@ -1,5 +1,6 @@
 import core
 import utils
+from enum import Enum
 
 from chess.moves import Castling, Move
 from chess.board import BlindBoard
@@ -14,32 +15,33 @@ CASTLING_DIFF = {
           BlindBoard.Diff({'e8', 'a8'}, {'c8','d8'}, set()) ],
 }
 
-CASTLING_MOVE_LENGTH = [2, 2, 0]
-TAKE_MOVE_LENGTH     = [1, 0, 1]
-SIMPLE_MOVE_LENGTH   = [1, 1, 0]
-AUTHORIZED_LENGTHS = [ SIMPLE_MOVE_LENGTH, TAKE_MOVE_LENGTH,
-                       CASTLING_MOVE_LENGTH ]
+class DiffLength(Enum):
+    CASTLING = [2, 2, 0]
+    TAKE     = [1, 0, 1]
+    SIMPLE   = [1, 1, 0]
+
+EXPECTED_DIFF_LENGTH = [ l for l in DiffLength ]
 
 ################################################################################
 
 def _diff_is_take(diff):
     # take move: one filled, none emptied, one changed
-    return diff.length() == TAKE_MOVE_LENGTH
+    return diff.length() == DiffLength.TAKE
 
 def _diff_is_simple_move(diff):
     # simple move: one filled, one emptied, zero changed
-    return diff.length() == SIMPLE_MOVE_LENGTH
+    return diff.length() == DiffLength.SIMPLE
 
 def _diff_sanity_check(diff):
     # sanity check on the board diff
-    if diff.length() not in AUTHORIZED_LENGTHS:
+    if diff.length() not in EXPECTED_DIFF_LENGTH:
         raise core.IllegalMove(
              'odd move(s) detected in diff: {}'.format(diff))
 
 ################################################################################
 
 def _read_castling(diff):
-    if diff.length() != CASTLING_MOVE_LENGTH:
+    if diff.length() != DiffLength.CASTLING:
         return False
 
     for side, difflist in CASTLING_DIFF.items():

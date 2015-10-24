@@ -1,12 +1,12 @@
+'''Chess Board internal representation module '''
 
 import chess
 import utils
 
-COL_NAMES = 'abcdefgh'
-ROW_NAMES = range(1, 9)
 
-ALL_SQUARES = [ '{}{}'.format(col, row) for col in COL_NAMES \
-                                        for row in ROW_NAMES ]
+################################################################################
+# EXCEPTIONS
+################################################################################
 
 class SquareOutOfBounds(Exception):
     pass
@@ -15,33 +15,80 @@ class MalformedSquareName(Exception):
     pass
 
 ################################################################################
+# SQUARE REPRESENTATION
+################################################################################
+
+# Squares are internally represented by a string with their classical
+# coordinate, such as 'a1', 'e2', 'h8', etc. (lower-case letter followed by an
+# integer) The following variables define these identifiers.
+
+COL_NAMES = 'abcdefgh'
+'''Names of all the columns on a chessboard'''
+
+ROW_NAMES = range(1, 9)
+'''Names of all the rows on a chessboard'''
+
+ALL_SQUARES = [ '{}{}'.format(col, row) for col in COL_NAMES \
+                                        for row in ROW_NAMES ]
+'''Identifiers of all of the 64 squares on a chessboard'''
+
+
 
 def square_name(x_pos, y_pos):
-    name = "{}{}".format(COL_NAMES[x_pos], y_pos+1)
-    if name not in ALL_SQUARES:
+    '''Convert square coordinates into a square identifier
+
+    Note: square 'a1' matches coordinates (0,0); other squares follow...
+
+    Args:
+        x_pos (int): x-coordinate of the square, in `range(0,7)`
+        y_pos (int): y-coordinate of the square, in `range(0,7)`
+
+    Returns:
+        string: a square-identifier, member of `ALL_SQUARES`
+
+    Raises:
+        SquareOutOfBounds: when (x_pos, y_pos) is outside of the chessboard,
+            i.e. if one of the coordinates is not in [0,7].
+    '''
+    if x_pos not in range(0,8) or y_pos not in range(0,8):
         raise SquareOutOfBounds
+    name = "{}{}".format(COL_NAMES[x_pos], y_pos+1)
     return name
 
+
+
 def square_coordinates(square):
-    if not len(square) == 2:
+    '''Convert a square identifier into a pair of coordinates
+
+    Note: square 'a1' matches coordinates (0,0); other squares follow...
+
+    Args:
+        square (str): square identifier, must be in `ALL_SQUARES`
+
+    Returns:
+        int, int: a pair of (x,y) coordinates in `range(0,7), range(0,7)`
+    '''
+    if square not in ALL_SQUARES:
         raise MalformedSquareName
 
     col_name = square[0]
-    if col_name not in COL_NAMES:
-        raise SquareOutOfBounds
-    x_pos = COL_NAMES.index(col_name)
+    row_name = square[1]
 
-    y_pos = square[1] - 1
-    if y_pos >= len(ROW_NAMES) or y_pos < 0:
-        raise SquareOutOfBounds
+    x_pos = COL_NAMES.index(col_name)
+    y_pos = row_name - 1
 
     return x_pos, y_pos
 
 
+
+################################################################################
+# BOARD REPRESENTATION
 ################################################################################
 
 class BlindBoard:
-    '''TODO
+    '''Semi-blind chessboard representation
+
+    A "blind board" partially tracks the state of a chessboard:
     '''
 
     class Diff:
