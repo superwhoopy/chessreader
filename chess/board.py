@@ -88,14 +88,25 @@ def square_coordinates(square):
 class BlindBoard:
     '''Semi-blind chessboard representation
 
-    A "blind board" partially tracks the state of a chessboard:
+    A blind board "sees" pieces and their color, but not their type; basically
+    it only stores which squares are occupied, and the color of the piece
+    standing on it.
     '''
 
     class Diff:
-        emptied = {}
-        filled  = {}
-        changed = {}
+        '''Diff between two BlindBoard'''
 
+        emptied = {}
+        '''Set of squares that were emptied'''
+
+        filled  = {}
+        '''Set of squares that were filled'''
+
+        changed = {}
+        '''Set of squares that were occuppied and still are, but whose piece
+        color has changed'''
+
+        # TODO: ugly, find a better way to do that
         def get_single_emptied(self):
             assert len(self.emptied) == 1
             return next(iter(self.emptied))
@@ -123,12 +134,29 @@ class BlindBoard:
                                                    str(self.filled),
                                                    str(self.changed))
 
+        # TODO: this function should return a tuple rather than a list
         def length(self):
+            '''Get the size of the diff
+
+            Returns: the size of the three sets `emptied`, `filled` and
+               `changed`
+            '''
             return [len(self.emptied), len(self.filled), len(self.changed)]
 
 
     @staticmethod
     def diff_board(board_to, board_from):
+        '''Diff two BlindBoards
+
+        Note: this static method is an alias for `board_to.diff(board_from)`.
+
+        Params:
+            board_to    (BlindBoard): ending position
+            board_from  (BlindBoard): starting position
+
+        Returns (BlindBoard.Diff): the diff describinig the changes from
+            `board_from` to `board_to`
+        '''
         return board_to.diff(board_from)
 
     ########################################

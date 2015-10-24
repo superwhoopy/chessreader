@@ -1,3 +1,5 @@
+'''Pieces moves representation'''
+
 from enum import Enum
 import chess.board
 
@@ -5,6 +7,8 @@ import chess.board
 
 
 class Move:
+    '''Default simple move, from a square to another'''
+
     def __init__(self, from_square, to_square):
         assert from_square in chess.board.ALL_SQUARES
         assert to_square   in chess.board.ALL_SQUARES
@@ -20,7 +24,10 @@ class Move:
 
 
 class Castling(Move):
+    '''Castling move'''
+
     class Side(Enum):
+        '''Side of the castling move'''
         KING = 0
         QUEEN = 1
 
@@ -30,4 +37,4 @@ class Castling(Move):
         self.to_square   = '-O' if side == Castling.Side.QUEEN \
                                 else ''
 
-# TODO: PromotionMove?
+# TODO: PromotionMove? EnPassant?
