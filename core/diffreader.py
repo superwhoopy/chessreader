@@ -15,9 +15,9 @@ CASTLING_DIFF = {
 }
 
 class DiffLength:
-    CASTLING = [2, 2, 0]
-    TAKE     = [1, 0, 1]
-    SIMPLE   = [1, 1, 0]
+    CASTLING = (2, 2, 0)
+    TAKE     = (1, 0, 1)
+    SIMPLE   = (1, 1, 0)
 
     # TODO: find a pythonic way to do this...
     valid    = [ CASTLING, TAKE, SIMPLE ]
@@ -66,7 +66,8 @@ def read(blind_board_diff):
 
     # TODO check for promotion move
 
-    # OK, so this oughta be a simple move or a take
+    # OK, so this oughta be a simple move or a take: print out some debug
+    # message
     if _diff_is_simple_move(blind_board_diff):
         utils.log.debug('diff is simple move')
     elif _diff_is_take(blind_board_diff):
@@ -74,11 +75,14 @@ def read(blind_board_diff):
     else:
         utils.log.error('unreadable diff move')
 
-    from_square = blind_board_diff.get_single_emptied()
+    # get the square the move came from, the square it goes to, create the
+    # appropriate Move object and return it
+
+    from_square = utils.singleton_get(blind_board_diff.emptied)
     if _diff_is_take(blind_board_diff):
-        to_square = blind_board_diff.get_single_changed()
+        to_square = utils.singleton_get(blind_board_diff.changed)
     else: # diff is simple move
-        to_square = blind_board_diff.get_single_filled()
+        to_square = utils.singleton_get(blind_board_diff.filled)
 
     move = Move(from_square, to_square)
     utils.log.debug('read move {}'.format(move))

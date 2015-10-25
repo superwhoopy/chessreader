@@ -1,4 +1,11 @@
-'''Chess Board internal representation module '''
+'''Chess Board internal representation module
+
+Squares are identified by a string with their usual name, from 'a1' to 'h8'. The
+global `ALL_SQUARES` is a list of all of the square names.
+
+The module also provides a `BlindBoard` class used to represent a board where
+pieces are only distinguished by their color.
+'''
 
 import chess
 import utils
@@ -9,9 +16,11 @@ import utils
 ################################################################################
 
 class SquareOutOfBounds(Exception):
+    '''Raised when attempting to access a square by its coordinates'''
     pass
 
 class MalformedSquareName(Exception):
+    '''Raised when accessing a square with a wrong id'''
     pass
 
 ################################################################################
@@ -106,19 +115,6 @@ class BlindBoard:
         '''Set of squares that were occuppied and still are, but whose piece
         color has changed'''
 
-        # TODO: ugly, find a better way to do that
-        def get_single_emptied(self):
-            assert len(self.emptied) == 1
-            return next(iter(self.emptied))
-
-        def get_single_filled(self):
-            assert len(self.filled) == 1
-            return next(iter(self.filled))
-
-        def get_single_changed(self):
-            assert len(self.changed) == 1
-            return next(iter(self.changed))
-
         def __init__(self, emptied, filled, changed):
             self.emptied = emptied
             self.filled = filled
@@ -134,14 +130,13 @@ class BlindBoard:
                                                    str(self.filled),
                                                    str(self.changed))
 
-        # TODO: this function should return a tuple rather than a list
         def length(self):
             '''Get the size of the diff
 
             Returns: the size of the three sets `emptied`, `filled` and
                `changed`
             '''
-            return [len(self.emptied), len(self.filled), len(self.changed)]
+            return len(self.emptied), len(self.filled), len(self.changed)
 
 
     @staticmethod
