@@ -5,15 +5,14 @@ from enum import Enum
 import utils.log
 import tests
 import core
+import engine
 
-class CaptureShell(cmd.Cmd):
+class ChessShell(cmd.Cmd):
     prompt = ' (capture) '
-
-    core   = core.Core()
 
     def do_read(self, arg):
         'Capture a picture of the board and process it'
-        self.core.run()
+        pass
 
     def do_end(self, arg):
         'End capturing mode and return to main shell'
@@ -43,8 +42,11 @@ class Shell(cmd.Cmd):
         tests.run()
 
     def do_start(self, arg):
-        'Start a new game'
-        CaptureShell().cmdloop()
+        'Start a new game using GNU chess'
+        self.gnuchess = engine.Generic()
+
+    def do_read(self, arg):
+        self.gnuchess.read()
 
     def do_quit(self, arg):
         'Leave the shell and end the program'
