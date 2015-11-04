@@ -1,29 +1,36 @@
 import utils
 
-import pexpect
+import subprocess
 
 class GnuChess:
     '''TODO'''
 
-    GNUCHESS_CMDLINE = 'gnuchess --xboard'
+    GNUCHESS_CMDLINE = ['gnuchess', '--xboard']
 
     def __init__(self):
-        self.proc = pexpect.spawn(self.GNUCHESS_CMDLINE)
+        try:
+            self.process = subprocess.Popen(
+                    self.GNUCHESS_CMDLINE,
+                    universal_newlines = True,
+                    stdin = subprocess.PIPE,
+                    stdout = subprocess.PIPE,
+                    stderr = subprocess.PIPE)
+        except (subprocess.SubprocessError, OSError) :
+            utils.log.error('unable to fork gnuchess')
 
         self.readline()
-        self.write('depth 1')
-        self.proc.expect('depth of ')
+        self.write('depth 1\n')
         self.readline()
-        self.readline()
+        self.write('e2e4\n')
         self.readline()
 
     def readline(self):
-        line = self.proc.readline()
-        utils.log.debug('gnuchess says: "{}"'.format(line))
+        line = self.process.stdout.readline()
+        utils.log.debug('gnuchess says "{}"'.format(line))
 
     def write(self, msg):
-        utils.log.debug('write to gnuchess: "{}"'.format(msg))
-        self.proc.sendline(msg)
+        utils.log.debug('writing "{}" to stdout'.format(msg))
+        self.process.stdin.write(msg)
 
     def play_move(self, player, move):
         pass
@@ -32,4 +39,4 @@ class GnuChess:
         pass
 
     def kill(self):
-        self.proc.sendline('quit')
+        self.process.stdin.write('quit')
