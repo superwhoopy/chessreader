@@ -43,7 +43,7 @@ class Shell(cmd.Cmd):
 
     def do_start(self, arg):
         'Start a new game using GNU chess'
-        self.gnuchess = engine.Generic()
+        self.gnuchess = engine.GnuChess()
 
     def do_read(self, arg):
         self.gnuchess.read()
