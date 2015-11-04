@@ -46,7 +46,10 @@ class Shell(cmd.Cmd):
         self.gnuchess = engine.GnuChess()
 
     def do_read(self, arg):
-        self.gnuchess.read()
+        self.gnuchess.readline()
+
+    def do_write(self, arg):
+        self.gnuchess.write(arg)
 
     def do_quit(self, arg):
         'Leave the shell and end the program'

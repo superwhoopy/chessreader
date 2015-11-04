@@ -49,8 +49,7 @@ def main(parsed_args):
         sys.exit(0)
 
     # default: call the shell
-    # shell.Shell().cmdloop()
-    shell.Shell().do_start('')
+    shell.Shell().cmdloop()
 
     sys.exit(0)
 

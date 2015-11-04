@@ -20,17 +20,16 @@ class GnuChess:
 
         self.readline()
         self.write('depth 1\n')
-        self.readline()
-        self.write('e2e4\n')
-        self.readline()
 
     def readline(self):
+        self.process.stdout.flush()
         line = self.process.stdout.readline()
         utils.log.debug('gnuchess says "{}"'.format(line))
 
     def write(self, msg):
-        utils.log.debug('writing "{}" to stdout'.format(msg))
+        utils.log.debug('writing "{}" to stdin'.format(msg))
         self.process.stdin.write(msg)
+        self.process.stdin.flush()
 
     def play_move(self, player, move):
         pass
