@@ -2,7 +2,7 @@ import utils
 
 import subprocess
 import queue
-import threading
+from threading import Thread
 
 ################################################################################
 
@@ -18,22 +18,55 @@ def singleton_get(singleton_set: set):
 
 ################################################################################
 
+class StreamReader(Thread):
+    '''Threaded Stream Reader
 
-class StreamReader(threading.Thread):
-    def __init__(self, stream, queue):
+    Runs a daemon in background that continuously tries to read from a stream,
+    and puts each line read into a queue. Particularly useful when interacting
+    with a subprocess through stdout/stderr.'''
+
+    # automatically kill the thread if it's the only one left alive
+    daemon = True
+
+    def __init__(self, stream, read_queue):
+        '''Thread default constructor.
+
+        The thread is not launched until its `start()` method is called.
+
+        Args:
+            stream: A file object such as `stdout`, `stderr`, ...
+            read_queue: Output queue where the lines read from `stream` will
+                be pushed to. Final carriage return will be removed.
+        '''
+        Thread.__init__(self)
         self.stream = stream
-        self.queue = queue
+        self._queue = read_queue
 
     def run(self):
+        '''Main thread method: continusouly read from the stream'''
         while True:
             line = self.stream.readline()
-            self.queue.put(line)
+            # remove the final carriage return
+            self._queue.put(line[:-1])
 
 
-class IOProcess:
+class Proc:
+    '''Call an external process and interact with it on standard I/O'''
+
+    # the StreamReader on stdout will push to this queue
+    _stdout_queue = queue.Queue()
 
     def __init__(self, cmdline):
+        '''Subprocess constructor
+
+        Launch an interactive subprocess, such as a shell, or any command line
+        interface.
+
+        Args:
+            cmdline (list of str): Command line and its arguments
+        '''
         try:
+            # create the process
             self.proc = subprocess.Popen( cmdline,
                             universal_newlines = True,
                             stdin = subprocess.PIPE,
@@ -42,15 +75,48 @@ class IOProcess:
         except (subprocess.SubprocessError, OSError) :
             utils.log.error('unable to fork {}'.format(cmdline))
 
-        # launch a thread that reads from stdout of the process
-        self._read_queue = queue.Queue()
-        self.reader      = StreamReader(self.proc.stdout, self._read_queue)
+        # launch a thread that continuously reads from stdout of the process
+        self.reader = StreamReader(self.proc.stdout, self._stdout_queue)
+        self.reader.start()
 
-    def read(self):
-        # TODO: return list of lines
-        pass
+
+    def read_stdout(self):
+        '''Read all the lines printed to stdout by the process until now.
+
+        Returns:
+            A list of string, each string is a line without the final carriage
+            return character.
+        '''
+        lines = []
+        while True:
+            try:
+                lines.append(self._stdout_queue.get_nowait())
+            except queue.Empty:
+                return lines
+
+    def readline_stdout(self, block=True):
+        '''Read one line from stdout.
+
+        Args:
+            block (bool): when `True`, this call will be blocking if nothing new
+                was printed to stdout.
+
+        Returns:
+            One line of stdout, without the final carriage return, or `None` if
+            `block` was set to `False` and no new output was available.
+        '''
+        try:
+            line = self._stdout_queue.get(block=block)
+        except queue.Empty:
+            line = None
+        return line
 
     def writeline(self, line):
-        self.proc.stdin.write(line)
+        '''Write a line to stdin, and flush it
+
+        Args:
+            line (str): line to write to stdin, without trailing carriage return
+        '''
+        self.proc.stdin.write(line + '\n')
         self.proc.stdin.flush()
 

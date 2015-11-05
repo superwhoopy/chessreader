@@ -7,31 +7,11 @@ import tests
 import core
 import engine
 
-class ChessShell(cmd.Cmd):
-    prompt = ' (capture) '
-
-    def do_read(self, arg):
-        'Capture a picture of the board and process it'
-        pass
-
-    def do_end(self, arg):
-        'End capturing mode and return to main shell'
-        utils.log.info("leaving capture mode")
-        return True
-
-
-
 
 class Shell(cmd.Cmd):
 
-    class State(Enum):
-        BASE    = 0
-        CAPTURE = 1
-
     intro  = 'Welcome to chessreader shell! Type your command:\n'
     prompt = ' (chessreader) '
-
-    state = State.BASE
 
     def emptyline(self):
         pass
@@ -46,10 +26,10 @@ class Shell(cmd.Cmd):
         self.gnuchess = engine.GnuChess()
 
     def do_read(self, arg):
-        self.gnuchess.readline()
+        self.gnuchess.read()
 
     def do_write(self, arg):
-        self.gnuchess.write(arg)
+        self.gnuchess.writeline(arg)
 
     def do_quit(self, arg):
         'Leave the shell and end the program'
