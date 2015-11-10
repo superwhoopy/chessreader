@@ -9,11 +9,13 @@ import chess.board
 class Move:
     '''Default simple move, from a square to another'''
 
-    def __init__(self, from_square, to_square):
+    def __init__(self, from_square, to_square, move_count=0):
         assert from_square in chess.board.ALL_SQUARES
         assert to_square   in chess.board.ALL_SQUARES
+
         self.from_square = from_square
-        self.to_square = to_square
+        self.to_square   = to_square
+        self.move_count  = move_count
 
     def __str__(self):
         return '{}{}'.format(self.from_square, self.to_square)
