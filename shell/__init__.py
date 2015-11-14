@@ -6,6 +6,7 @@ import utils.log
 import tests
 import core
 import engine
+import chess
 
 
 class Shell(cmd.Cmd):
@@ -27,6 +28,13 @@ class Shell(cmd.Cmd):
 
     def do_read(self, arg):
         self.gnuchess.read()
+
+    def do_readmove(self, arg):
+        self.gnuchess.read_move()
+
+    def do_playmove(self, arg):
+        move = chess.moves.from_string(arg)
+        self.gnuchess.play_move(move)
 
     def do_write(self, arg):
         self.gnuchess.writeline(arg)

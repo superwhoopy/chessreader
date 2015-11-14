@@ -65,6 +65,7 @@ def read(blind_board_diff):
         return castling_move
 
     # TODO check for promotion move
+    # TODO check for 'en passant'
 
     # OK, so this oughta be a simple move or a take: print out some debug
     # message

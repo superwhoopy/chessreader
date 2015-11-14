@@ -8,66 +8,94 @@ import time
 class GnuChess:
     '''TODO'''
 
-    GNUCHESS_CMDLINE = ['gnuchess', '--xboard']
-    TIMEOUT = 1
+    DEFAULT_TIMEOUT = 1
 
-    ERRMSG_ILLEGAL_MOVE = "Invalid move"
+    class MSGS:
+        ERR_ILLEGAL_MOVE = "Invalid move"
+        RE_REGULAR_MOVE  = '(?P<move_count>\d+)\. ' \
+                           '(?P<from_square>[abcdefgh][12345678])' \
+                           '(?P<to_square>[abcdefgh][12345678])'
 
-    proc = pexpect.spawn(' '.join(GNUCHESS_CMDLINE))
+    @staticmethod
+    def cmdline():
+        binpath = pexpect.which('gnuchess')
+        if binpath is None:
+            utils.log.error('cannot find gnuchess on this system')
 
+        args    = ['--xboard']
 
+        return [binpath] + args
 
-    def __init__(self):
+    def __init__(self, cmdline=cmdline.__func__(), do_log=False):
+        # spawn the process
+        self.proc = pexpect.spawn(' '.join(cmdline))
+
         # make sure we have started
-        self.proc.expect('Chess', timeout=self.TIMEOUT)
+        self.proc.expect('Chess', timeout=self.DEFAULT_TIMEOUT)
         # set to manual mode (i.e. 2 players)
         self.proc.sendline('manual')
+        # TODO: logging
 
 
     def read(self):
-        for line in self.proc.read_stdout():
-            utils.log.debug('gnuchess says "{}"'.format(line))
+        # TODO: implement a "read all you can" method
+        # for line in self.proc.read_stdout():
+        #     utils.log.debug('gnuchess says "{}"'.format(line))
+        pass
 
     def writeline(self, msg):
         utils.log.debug('writing "{}" to stdin'.format(msg))
-        self.proc.writeline(msg)
+        self.proc.sendline(msg)
 
     def play_move(self, move):
         # write the move to gnuchess stdin
-        self.proc.sendline(move)
+        move_str = str(move)
+        self.proc.sendline(move_str)
 
         # then check stdout: make sure the move count is correct, plus we don't
         # want to find an invalid move...
-        expect_good = '{}. {}'.format(move.move_count, str(move)) \
+        expect_good = '{}. {}'.format(move.move_count, move_str) \
                         if move.move_count is not None \
-                        else str(move)
-        index = self.proc.expect([expect_good, self.ERRMSG_ILLEGAL_MOVE,
-                                  pexpect.TIMEOUT, pexpect.EOF])
+                        else move_str
+        utils.log.debug('expecting {}...'.format(expect_good))
+
+        index = self.proc.expect([expect_good, self.MSGS.ERR_ILLEGAL_MOVE,
+                                  pexpect.TIMEOUT, pexpect.EOF],
+                                 timeout=self.DEFAULT_TIMEOUT)
 
         if index == 0:
+            utils.log.debug('got the right answer: {}{}'.format(
+                self.proc.before,self.proc.after))
             # everything went well!
             pass
         elif index == 1:
+            utils.log.debug('illegal move reported by gnuchess')
             # illegal move
             pass
         elif index in [2,3]:
-            utils.log.error(
-                'an error occured with gnuchess: {}'.format(self.proc.after))
+            self.raise_error()
 
     def read_move(self):
-        MOVE_RE = '(?P<move_count>\d+)\. ' \
-                  '(?P<from_square>[abcdefgh][12345678])' \
-                  '(?P<to_square>[abcdefgh][12345678])'
-
-        index = self.proc.expect(MOVE_RE, pexpect.TIMEOUT, pexpect.EOF)
+        index = self.proc.expect([self.MSGS.RE_REGULAR_MOVE, pexpect.TIMEOUT,
+                                    pexpect.EOF],
+                                 timeout=self.DEFAULT_TIMEOUT)
         if index == 0:
             # it's a match
             match = self.proc.match
-            return Move(match.group('from_square'),
-                        match.group('to_square'),
-                        int(match.group('move_count')))
+            from_square = match.group('from_square')
+            to_square   = match.group('to_square')
+            move_count  = int(match.group('move_count'))
+            utils.log.debug(
+                'creating move {}: {}{}'.format(from_square, to_square,
+                                                move_count))
+            return Move(from_square, to_square, move_count)
         elif index in [1,2]:
-            pass
+            self.raise_error()
+
+    def raise_error(self):
+        utils.log.error(
+            'an error occured with gnuchess: {}{}'.format(self.proc.before,
+                                                          self.proc.after))
 
     def kill(self):
         self.writeline('quit')

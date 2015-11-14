@@ -1,7 +1,22 @@
 '''Pieces moves representation'''
 
 from enum import Enum
+import re
+
 import chess.board
+import utils
+
+################################################################################
+
+RE_MOVE = re.compile( '(?P<from_square>[abcdefgh][12345678])' \
+                      '(?P<to_square>[abcdefgh][12345678])')
+def from_string(string):
+    match = RE_MOVE.match(string)
+    if not match:
+        # TODO: throw exception instead
+        utils.log.error(
+                "string '{}' does not match a valid move".format(string))
+    return Move(match.group('from_square'), match.group('to_square'))
 
 ################################################################################
 
@@ -9,7 +24,7 @@ import chess.board
 class Move:
     '''Default simple move, from a square to another'''
 
-    def __init__(self, from_square, to_square, move_count=0):
+    def __init__(self, from_square, to_square, move_count=None):
         assert from_square in chess.board.ALL_SQUARES
         assert to_square   in chess.board.ALL_SQUARES
 
@@ -23,6 +38,7 @@ class Move:
     def __eq__(self,other):
         return self.from_square == other.from_square and \
                self.to_square   == other.to_square
+
 
 
 class Castling(Move):
