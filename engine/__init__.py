@@ -108,6 +108,7 @@ class GnuChess:
                     color, move_count, from_square, to_square))
             return Move(from_square, to_square, move_count, color)
         elif index in [1,2]:
+            # TODO: throw exception instead
             self.raise_error()
 
 

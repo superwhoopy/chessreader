@@ -30,8 +30,7 @@ def from_string(string):
     if move_count:
         color = Color.BLACK if match.group('black_move') else Color.WHITE
 
-    return Move(match.group('from_square'), match.group('to_square'),
-                move_count, color)
+    return Move(from_square, to_square, move_count, color)
 
 ################################################################################
 
@@ -45,7 +44,7 @@ class Move:
 
         self.from_square = from_square
         self.to_square   = to_square
-        self.move_count  = move_count
+        self.move_count  = int(move_count) if move_count is not None else None
         self.color       = color
 
 
