@@ -9,16 +9,27 @@ import utils
 
 ################################################################################
 
-RE_MOVE = re.compile( '((?P<move_count>\d+)\. )?'   \
-                      '(?P<black_move>\.\.\. )?'    \
-                      '(?P<from_square>[abcdefgh][12345678])' \
-                      '(?P<to_square>[abcdefgh][12345678])')
+RE_MOVE = re.compile( r'((?P<move_count>\d+)\. )?'   \
+                      r'(?P<black_move>\.\.\. )?'    \
+                      r'(?P<from_square>[abcdefgh][12345678])' \
+                      r'(?P<to_square>[abcdefgh][12345678])')
+'''Regexp parsing a move.
+
+Two kinds of strings are recognized:
+
+    - "naked" string made only of two consecutive square names;
+    - "complete" string made of a move count, and a color indication. E.g:
+      `1. ... e7e5` to tell that Black plays e7e5 on their first move.
+'''
 
 
 def from_string(string):
     match = RE_MOVE.match(string)
+
+    # TODO: recognize castling?
+
     if not match:
-        # TODO: throw exception instead
+        # TODO: throw exception instead?
         utils.log.error(
                 "string '{}' does not match a valid move".format(string))
 
@@ -39,6 +50,18 @@ class Move:
     '''Default simple move, from a square to another'''
 
     def __init__(self, from_square, to_square, move_count=None, color=None):
+        '''Create a default move, other than castling
+
+        Args:
+            from_square (str): square the move starts from
+            to_square   (str): square the move goes to
+            move_count  (int): optional argument, how manu moves occurred before
+               in the game; recall that this value starts at 1 for the first
+               move, and is incremented every two moves (one for White, one for
+               Black)
+            color    `Color`): optional, `Color.WHITE` or `Color.BLACK` to tell
+               who plays this move
+        '''
         assert from_square in chess.board.ALL_SQUARES
         assert to_square   in chess.board.ALL_SQUARES
 
@@ -53,6 +76,12 @@ class Move:
 
 
     def pretty_print(self):
+        '''Pretty-print the move, including move count & color
+
+        If the move comes with a `move_count` and a `color`, print these out.
+        For instance, if Black plays e7e5 as first move, this method will
+        return `2. ... e7e5` whereas `__str__` only returns `e7e5`.
+        '''
         move_count_str = ''
         color_str      = ''
 
@@ -81,6 +110,13 @@ class Castling(Move):
         QUEEN = 1
 
     def __init__(self, side, move_count=None, color=None):
+        '''Create a Castling move
+
+        Args:
+            side       : side of the castling move : `Side.KING` or `Side.QUEEN`
+            move_count : see `Move.__init__()`
+            color      : see `Move.__init__()`
+        '''
         assert side in Castling.Side
         self.from_square = 'O-O'
         self.to_square   = '-O' if side == Castling.Side.QUEEN \
