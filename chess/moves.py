@@ -125,4 +125,34 @@ class Castling(Move):
         self.move_count  = move_count
         self.color       = color
 
-# TODO: PromotionMove? EnPassant?
+
+class Promote(Move):
+    '''Promotion move'''
+
+    def __init__(self, from_square, to_square, promote_to,
+                 move_count=None, color=None):
+        '''TODO'''
+        # sanity checks
+        assert promote_to in chess.Piece
+        expected_line = {
+                chess.Color.WHITE : [7],
+                chess.Color.BLACK : [0],
+                None              : [0, 7],
+                }
+        _, line = chess.board.square_coordinates(to_square)
+        assert line in expected_line
+
+        # call parent ctor
+        super(Promote, self).__init__(from_square, to_square, move_count,
+                color)
+
+        # register the piece to promote to
+        self.promote_to = promote_to
+
+    def __eq__(self, other):
+        return super(Promote, self).__eq__(self,other) and \
+               self.promote_to == other.promote_to
+
+    def __str__(self):
+        return super(Promote, self).__str__(self) + \
+               '={}'.format(self.promote_to.value)

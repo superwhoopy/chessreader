@@ -18,6 +18,8 @@ def singleton_get(singleton_set: set):
 
 ################################################################################
 
+# TODO: StreamReader and Proc are not used anymore - drop it?
+
 class StreamReader(Thread):
     '''Threaded Stream Reader
 

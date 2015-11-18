@@ -12,4 +12,9 @@ class Color(Enum):
         return Color.WHITE if color == Color.BLACK \
                else Color.BLACK
 
+class Piece(Enum):
+    QUEEN  = 'Q'
+    ROOK   = 'R'
+    BISHOP = 'B'
+    KNIGHT = 'N'
 
