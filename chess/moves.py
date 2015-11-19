@@ -55,11 +55,11 @@ class Move:
         Args:
             from_square (str): square the move starts from
             to_square   (str): square the move goes to
-            move_count  (int): optional argument, how manu moves occurred before
+            move_count  (int): optional argument, how many moves occurred before
                in the game; recall that this value starts at 1 for the first
                move, and is incremented every two moves (one for White, one for
                Black)
-            color    `Color`): optional, `Color.WHITE` or `Color.BLACK` to tell
+            color    (`Color`): optional, `Color.WHITE` or `Color.BLACK` to tell
                who plays this move
         '''
         assert from_square in chess.board.ALL_SQUARES
