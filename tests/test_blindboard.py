@@ -10,11 +10,13 @@ def setUp():
     pass
 
 def test_BlindBoardDiff():
+    '''Test the __eq__() method of BlindBoard.Diff'''
     diff1 = chess.board.BlindBoard.Diff({'a1'}, {'b1', 'c1'}, {})
     diff2 = chess.board.BlindBoard.Diff({'a1'}, {'c1', 'b1'}, {})
     nose.tools.ok_(diff1 == diff2)
 
 def test_BlindBoard_moves():
+    '''Diff 2 BlinBoards and check the result'''
     board_from = chess.board.BlindBoard({'a1': Color.WHITE,
                                          'a7': Color.BLACK,
                                          'a8': Color.BLACK,
@@ -30,6 +32,7 @@ def test_BlindBoard_moves():
     nose.tools.eq_(diff.changed, {'a8'})
 
 def test_BlindBoard_identical():
+    '''Diff 2 identical BlindBoards and check the result'''
     board_from = chess.board.BlindBoard({'a1': Color.WHITE,
                                          'a7': Color.BLACK,
                                          'a8': Color.BLACK,

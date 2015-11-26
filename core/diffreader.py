@@ -1,3 +1,8 @@
+'''
+The diffreader module main purpose is to turn BlindBoard.Diff objects into valid
+chess.Move objects, or to throw an error if the move is invalid.
+'''
+
 import core
 import utils
 
