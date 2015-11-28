@@ -14,8 +14,17 @@ class Shell(cmd.Cmd):
     intro  = 'Welcome to chessreader shell! Type your command:\n'
     prompt = ' (chessreader) '
 
+    core = None
+
+    # TODO: make it a decorator
+    def ensure_game_is_on(self):
+        if core is None:
+            utils.log.warn('no game currently active - run start first')
+            return False
+        return True
+
     def emptyline(self):
-        pass
+        self.do_read("")
 
     def do_test(self, arg):
         'Run the chessreader test suite'
@@ -23,25 +32,17 @@ class Shell(cmd.Cmd):
         tests.run()
 
     def do_start(self, arg):
-        'Start a new game using GNU chess'
-        self.gnuchess = engine.GnuChess()
+        'Start a new game'
+        self.core = core.Core()
+
+    def do_takeback(self, arg):
+        pass
 
     def do_read(self, arg):
-        self.gnuchess.read()
-
-    def do_readmove(self, arg):
-        self.gnuchess.read_move()
-
-    def do_playmove(self, arg):
-        move = chess.moves.from_string(arg)
-        self.gnuchess.play_move(move)
-
-    def do_write(self, arg):
-        self.gnuchess.writeline(arg)
+        self.core.run()
 
     def do_quit(self, arg):
         'Leave the shell and end the program'
-
         utils.log.info("quitting; bye!")
         sys.exit(0)
 

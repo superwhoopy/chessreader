@@ -2,6 +2,7 @@ import chess
 
 
 def _build_conversion_dict():
+    '''Builds `CONVERSION_DICT` global const var'''
     conversion_dict = {}
     for char in 'rnbqkp':
         conversion_dict[char] = chess.Color.BLACK
@@ -10,11 +11,43 @@ def _build_conversion_dict():
     conversion_dict['.'] = None
     return conversion_dict
 
+'''Conversion dict: indexes are FEN characters, value is `None` for an empty
+square, or one of `chess.Color` if the square is occuppied'''
 CONVERSION_DICT = _build_conversion_dict()
 
 ################################################################################
 
 def fen_2_blindboard(fen):
+    '''Convert a full FEN-notation into a `BlindBoard` object
+
+    The FEN string is expected to:
+
+        - start with a carriage-return character
+        - for each line, each square is represented with a character in
+          `'rnbqkpRNBQKP.'`, followed by a space or a carriage-return (for the
+          squares of the h-column.
+
+    Example: the starting position is:
+
+    ```
+
+r n b q k b n r
+p p p p p p p p
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+P P P P P P P P
+R N B Q K B N R
+
+    ```
+
+    Args:
+        fen (str): full FEN-notation of a position, with the following
+
+    Returns:
+        A BlindBoard object matching the position
+    '''
     # start by removing all these useless spaces
     fen = fen.replace(' ', '')
     # split into board lines
@@ -45,6 +78,15 @@ def fen_2_blindboard(fen):
     return chess.board.BlindBoard(occupied_squares)
 
 def read_FEN_game(game):
+    '''Convert a set of FEN position into a list of `BlindBoard` objects
+
+    Args:
+        game (str): concatenation of FEN positions as described in
+            `fen_2_blindboard()`, with no separation.
+
+    Returns:
+        A list of `BlindBoard` objects representing the positions in order
+    '''
     # 64 squares; for each squares 2 characters; one carriage return at the end
     # of each line; one additional carriage return as starting character
     len_one_board = 64*2 + 1

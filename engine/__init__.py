@@ -37,15 +37,16 @@ class GnuChess:
             self.logfile = open('gnuchess.log', 'wb')
             self.proc.logfile_read = self.logfile
 
-        # make sure we have started
-        self.proc.expect('Chess', timeout=self.DEFAULT_TIMEOUT)
         # set depth to minimum
         self.set_depth(1)
 
         # set to manual mode (i.e. 2 players)
-        # self.proc.sendline('manual')
+        self.proc.sendline('manual')
 
         # TODO: logging
+
+        # make sure we have started
+        self.proc.expect('Chess', timeout=self.DEFAULT_TIMEOUT)
 
 
     def read(self):
@@ -70,7 +71,7 @@ class GnuChess:
         # then check stdout: make sure the move count is correct, plus we don't
         # want to find an invalid move...
         expect_good = '{}. {}'.format(move.move_count, move_str) \
-                        if move.move_count is not None \
+                        if move.move_count is not None           \
                         else move_str
 
         index = self.proc.expect([expect_good, self.Messages.ERR_ILLEGAL_MOVE,

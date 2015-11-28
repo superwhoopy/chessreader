@@ -13,6 +13,7 @@ class IllegalMove(Exception):
     def __str__(self):
         return self.msg
 
+
 class PlayMode(Enum):
     '''TODO'''
     ONE_PLAYER = 1
@@ -22,8 +23,8 @@ class PlayMode(Enum):
 class Core:
     def __init__(self):
         self.capture_engine        = imgprocessor.CaptureEngine()
-        self.chess_engine          = engine.Generic()
-        self.last_valid_chessboard = chess.board.BlindBoard()
+        self.chess_engine          = engine.GnuChess()
+        self.last_valid_chessboard = chess.board.BLIND_START
 
     def run(self):
         pass

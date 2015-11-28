@@ -94,6 +94,8 @@ def square_coordinates(square):
 # BOARD REPRESENTATION
 ################################################################################
 
+
+
 class BlindBoard:
     '''Semi-blind chessboard representation
 
@@ -196,4 +198,22 @@ class BlindBoard:
         assert color  in chess.Color
         self.occupied_squares[square] = color
 
+
+def build_start_pos_blind_board():
+    'Return a blind board for the starting position'
+    filled = {}
+    for col in 'abcdefgh':
+        for row in '12':
+            square = '{}{}'.format(col,row)
+            filled[square] = chess.Color.WHITE
+        for row in '78':
+            square = '{}{}'.format(col,row)
+            filled[square] = chess.Color.BLACK
+    return BlindBoard(filled)
+
+BLIND_EMPTY = BlindBoard()
+'''Empty board representation'''
+
+BLIND_START = build_start_pos_blind_board()
+'''Board with pieces in starting position'''
 
