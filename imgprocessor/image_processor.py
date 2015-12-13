@@ -15,8 +15,8 @@ from sklearn.neighbors import KNeighborsClassifier
 """
 TODO (13/12/2015)
 * The whole thing works generally well, color detection is fine,
-but sometimes occupancy matrix has one or two errors.
-This might be due to an issue in the way the squares are isolated? or maybe the thresholding?
+but sometimes occupancy matrix can have errors because of the thresholding strategy
+Use a more general method ?
 * write a method to return an actual `BlindBoard` object based on the `self._blindboard_matrix`
 * write proper testing on a set of images
 """
@@ -55,6 +55,7 @@ class ImageProcessor(object):
 
     """
     LINE_ANGLE_TOLERANCE = 0.1  # tolerance threshold (in radians) to filter horizontal and vertical lines
+    OCCUPANCY_THRESHOLD = 0.2  # if a binary square image has more than this proportion of white pixels, it is considered occupied
     TEMP_DIR = "temp_images"  # name of directory where intermediary images will be stored
 
     # this enum is used for the classification labels
@@ -138,7 +139,7 @@ class ImageProcessor(object):
             print("Computing blindboard matrix...")
         self._blindboard_matrix = self.compute_blindboard_matrix()
 
-        if reference is not None:  # TODO currently we treat black and white symmetrically in the error computation
+        if reference is not None:
             number_errors = int(np.sum(self._blindboard_matrix != reference))
             print("Number of mislabeled pieces: {0}".format(number_errors))
 
@@ -262,14 +263,14 @@ class ImageProcessor(object):
         plt.savefig(os.path.join(self.TEMP_DIR, "edges_and_squares.jpg"))
 
     @staticmethod
-    def plot_square_images(matrix):
+    def plot_square_images(matrix, file_path):
         fig, axes = plt.subplots(nrows=8, ncols=8)
         for i in range(8):
             for j in range(8):
                 axes[i][j].imshow(matrix[i, j], cmap=plt.cm.gray)
                 axes[i][j].axis('off')
         plt.plot()
-        plt.show()
+        plt.savefig(file_path)
 
     def save_image(self, name, image, path=None):
         if path is None:
@@ -286,12 +287,13 @@ class ImageProcessor(object):
         diff_image = exposure.adjust_gamma(np.abs(adj_image - adj_start_image), 0.5)
         binary_diff_image = diff_image > threshold_otsu(diff_image)
 
+        binary_diff_squares = self.cut_squares(binary_diff_image, self._edges)
+
         if self.verbose:
             self.save_image("gamma_adj_image.jpg", adj_image)
             self.save_image("diff_gray.jpg", diff_image)
             self.save_image("diff_bw.jpg", binary_diff_image)
-
-        binary_diff_squares = self.cut_squares(binary_diff_image, self._edges)
+            self.plot_square_images(binary_diff_squares, os.path.join(self.temp_image_dir, "diff_bw_squares.jpg"))
 
         self._processed_square_images = np.empty((8, 8), dtype=np.ndarray)
 
@@ -300,7 +302,7 @@ class ImageProcessor(object):
                 square = binary_diff_squares[i, j]
                 n_pixels = square.shape[0] * square.shape[1]
                 # TODO improve this rule ?
-                self._occupancy_matrix[i, j] = np.sum(square) / n_pixels > 0.1
+                self._occupancy_matrix[i, j] = np.sum(square) / n_pixels > self.OCCUPANCY_THRESHOLD
                 self._processed_square_images[i, j] = square
 
     @staticmethod
@@ -340,4 +342,5 @@ if __name__ == "__main__":
     test_files = [os.path.join(IMAGES_FOLDER, f) for f in os.listdir(IMAGES_FOLDER)
                   if f.endswith(".jpg") and f not in {'Picture 13.jpg', 'Picture 14.jpg'}]
     processor = ImageProcessor(base_img, start_img, verbose=True)
-    processor.process(random.choice(test_files))
+    test_image = random.choice(test_files)
+    processor.process(test_image)
