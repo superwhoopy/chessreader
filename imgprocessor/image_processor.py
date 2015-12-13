@@ -4,7 +4,6 @@ import operator
 import os
 import random
 from aetypes import Enum
-
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
@@ -20,26 +19,29 @@ class ImageProcessor(object):
     it into a `BlindBoard` object. The main method is `process`.
     The following steps are applied to analyze the image:
 
-    1. CHESSBOARD LINES DETECTION: we use a Canny edge detector to turn the RGB image
+    At the beginning of the game:
+
+    * CHESSBOARD LINES DETECTION: we use a Canny edge detector to turn the RGB image
     into a binary image where the lines separating the squares of the chessboard are clearly visible.
     Then we use the Hough line detection algorithm and pick the 8 most likely horizontal and vertical
     lines in the image.
 
-    2. SQUARES ISOLATION: from the estimated equations of the chessboard lines, we derive analytically
-    the intersections of the 16 chessboard lines, and produce a matrix of 8x8 images `self._square_images`
-    where each image corresponds to a single square in the chessboard.
+    * COLOR CLASSIFIER TRAINING: we train a k-nearest neighbour classifier to detect the black and
+    white colors using the picture of the beginning of the game, where the position of each piece is known.
+    For this classification, each datapoint is one piece, and each piece is represented by an RGB tuple
+    corresponding to the average color within a small disk centered on the image of the piece.
 
-    3. OCCUPANCY MATRIX ESTIMATION: we then determine for each square whether it is occupied or not.
+    For each new picture during the game:
+
+    * OCCUPANCY MATRIX ESTIMATION: we determine for each square whether it is occupied or not.
     To do this, we take the absolute difference between the current image and the image of the empty chessboard.
     All images are in grayscale for this step, and in order to detect black pieces on black squares,
     we use a gamma correction (with gamma < 1) on the input images and on the difference image.
     Then, we apply a binary thresholding to the image (using the Otsu method) and for each square,
     we say that it is occupied if more than 10% of its pixels are white after thresholding.
 
-    4. BLINDBOARD ESTIMATION: for each occupied square, we pick a representative color (average RGB color
-    in a disk centered on the midpoint of the square). We then use k-means clustering (k=2) on these data
-    (each datapoint represents a piece, and the dimensions are the three RGB channels) to classify each
-    piece as 'black' or 'white'.
+    * BLINDBOARD ESTIMATION: for each occupied square, we use the color classifier to determine the
+    color of the corresponding piece.
 
 
     """
@@ -118,7 +120,7 @@ class ImageProcessor(object):
         self.compute_occupancy_matrix()
 
         if reference is not None:
-            print("OCCUPANCY MATRIX ESTIMATION")
+            print("Occupancy matrix estimation")
             false_positives = np.sum(self._occupancy_matrix & ~reference)
             false_negatives = np.sum(~self._occupancy_matrix & reference)
             print("False positives:", false_positives, "- False negatives:", false_negatives)
@@ -128,10 +130,8 @@ class ImageProcessor(object):
         self._blindboard_matrix = self.compute_blindboard_matrix()
 
         if reference is not None:  # TODO currently we treat black and white symmetrically in the error computation
-            print("BLINDBOARD ESTIMATION")
-            number_errors = int(min(np.sum(self._blindboard_matrix != reference),
-                                    np.sum(self._blindboard_matrix != ~reference)))
-            print("Number of mislabeled pieces:", number_errors)
+            number_errors = int(np.sum(self._blindboard_matrix != reference))
+            print("Number of mislabeled pieces: {0}".format(number_errors))
 
         if self.verbose:
             print("Blindboard matrix:")
@@ -277,7 +277,6 @@ class ImageProcessor(object):
         diff_image = exposure.adjust_gamma(np.abs(adj_image - adj_start_image), 0.5)
         binary_diff_image = diff_image > threshold_otsu(diff_image)
 
-        # FIXME use a different correction to detect white pieces
         if self.verbose:
             self.save_image("gamma_adj_image.jpg", adj_image)
             self.save_image("diff_gray.jpg", diff_image)
@@ -291,8 +290,8 @@ class ImageProcessor(object):
             for j in range(binary_diff_squares.shape[1]):
                 square = binary_diff_squares[i, j]
                 n_pixels = square.shape[0] * square.shape[1]
+                # TODO improve this rule ?
                 self._occupancy_matrix[i, j] = np.sum(square) / n_pixels > 0.1
-                # pdb.set_trace()
                 self._processed_square_images[i, j] = square
 
     @staticmethod
@@ -303,7 +302,7 @@ class ImageProcessor(object):
         return np.mean(img[disk_mask], axis=0)
 
     @staticmethod
-    def apply_to_matrix(f, M, odim):
+    def apply_to_matrix(f, M, odim):  # TODO remove this method
         output = np.empty(M.shape + (odim,))
         for i in range(M.shape[0]):
             for j in range(M.shape[1]):
