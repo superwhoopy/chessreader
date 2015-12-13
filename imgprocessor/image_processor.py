@@ -3,21 +3,24 @@ import math
 import operator
 import os
 import random
-from aetypes import Enum
+
 import numpy as np
 import matplotlib.pyplot as plt
+
 from sklearn.decomposition import PCA
 from skimage import feature, io, color, exposure
 from skimage.transform import hough_line, hough_line_peaks
 from skimage.filters import threshold_otsu
 from sklearn.neighbors import KNeighborsClassifier
 
+from chess import Color
+from chess.board import BlindBoard, square_name
+
 """
 TODO (13/12/2015)
 * The whole thing works generally well, color detection is fine,
 but sometimes occupancy matrix can have errors because of the thresholding strategy
 Use a more general method ?
-* write a method to return an actual `BlindBoard` object based on the `self._blindboard_matrix`
 * write proper testing on a set of images
 """
 
@@ -57,11 +60,6 @@ class ImageProcessor(object):
     LINE_ANGLE_TOLERANCE = 0.1  # tolerance threshold (in radians) to filter horizontal and vertical lines
     OCCUPANCY_THRESHOLD = 0.2  # if a binary square image has more than this proportion of white pixels, it is considered occupied
     TEMP_DIR = "temp_images"  # name of directory where intermediary images will be stored
-
-    # this enum is used for the classification labels
-    class Color(Enum):
-        BLACK = -1
-        WHITE = 1
 
     def __init__(self, blank_image_path, start_image_path, verbose=False):
         """
@@ -205,7 +203,7 @@ class ImageProcessor(object):
         self.color_classifier = KNeighborsClassifier()
         initial_squares = self.cut_squares(self.initial_image, self._edges)
         training_data = np.zeros((32, 3))  # 32 pieces (16 black, 16 white), 3 color channels
-        training_labels = [self.Color.BLACK for _ in range(16)] + [self.Color.WHITE for _ in range(16)]
+        training_labels = [Color.BLACK for _ in range(16)] + [Color.WHITE for _ in range(16)]
         pieces_indices = [(i, j) for i in [0, 1, 6, 7] for j in range(8)]
 
         for k, index in enumerate(pieces_indices):
@@ -217,11 +215,12 @@ class ImageProcessor(object):
 
         self.color_classifier.fit(training_data, training_labels)
 
-    def save_pca_plot(self, X, labels, basedir):
+    @staticmethod
+    def save_pca_plot(X, labels, basedir):
         pca = PCA(n_components=2)
         X_r = pca.fit_transform(X)
         plt.clf()
-        colors = ["brown" if k == self.Color.BLACK else "beige" for k in labels]
+        colors = ["brown" if k == Color.BLACK else "beige" for k in labels]
         plt.scatter(X_r[:, 0], X_r[:, 1], color=colors, edgecolors="black")
         plt.savefig(os.path.join(basedir, "colors_pca.jpg"))
 
@@ -334,13 +333,25 @@ class ImageProcessor(object):
         estimates[occupied_squares] = predictions
         return np.reshape(estimates, (8, 8))
 
+    def get_blindboard(self):
+        occupied_squares = []
+        for i in range(self._blindboard_matrix.shape[0]):
+            for j in range(self._blindboard_matrix.shape[1]):
+                if self._blindboard_matrix[i,j] != 0:
+                    occupied_squares.append(square_name(7-i,j))
+        return BlindBoard(occupied_squares)
+
 
 if __name__ == "__main__":
+
     IMAGES_FOLDER = '/Users/daniel/Desktop/chess/chess-pictures-other'
     base_img = os.path.join(IMAGES_FOLDER, 'Picture 13.jpg')
     start_img = os.path.join(IMAGES_FOLDER, 'Picture 14.jpg')
     test_files = [os.path.join(IMAGES_FOLDER, f) for f in os.listdir(IMAGES_FOLDER)
                   if f.endswith(".jpg") and f not in {'Picture 13.jpg', 'Picture 14.jpg'}]
-    processor = ImageProcessor(base_img, start_img, verbose=True)
     test_image = random.choice(test_files)
+
+    processor = ImageProcessor(base_img, start_img, verbose=True)
     processor.process(test_image)
+    blindboard = processor.get_blindboard()
+    print(blindboard.occupied_squares)
