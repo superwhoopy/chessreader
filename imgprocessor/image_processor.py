@@ -334,11 +334,14 @@ class ImageProcessor(object):
         return np.reshape(estimates, (8, 8))
 
     def get_blindboard(self):
-        occupied_squares = []
+        occupied_squares = {}
         for i in range(self._blindboard_matrix.shape[0]):
             for j in range(self._blindboard_matrix.shape[1]):
-                if self._blindboard_matrix[i,j] != 0:
-                    occupied_squares.append(square_name(7-i,j))
+                value = self._blindboard_matrix[i,j]
+                if value == Color.BLACK.value:
+                    occupied_squares[square_name(7-i,j)] = Color.BLACK
+                elif value == Color.WHITE.value:
+                    occupied_squares[square_name(7-i,j)] = Color.WHITE
         return BlindBoard(occupied_squares)
 
 

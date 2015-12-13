@@ -9,7 +9,7 @@ pieces are only distinguished by their color.
 
 import chess
 import utils
-
+import utils.log
 
 ################################################################################
 # EXCEPTIONS
