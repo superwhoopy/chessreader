@@ -3,14 +3,16 @@ import math
 import operator
 import os
 import random
+from aetypes import Enum
 
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 from skimage import feature, io, color, exposure
 from skimage.transform import hough_line, hough_line_peaks
 from skimage.filters import threshold_otsu
-from sklearn.cluster import KMeans
-from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+
 
 class ImageProcessor(object):
     """
@@ -44,9 +46,15 @@ class ImageProcessor(object):
     LINE_ANGLE_TOLERANCE = 0.1  # tolerance threshold (in radians) to filter horizontal and vertical lines
     TEMP_DIR = "temp_images"  # name of directory where intermediary images will be stored
 
+    # this enum is used for the classification labels
+    class Color(Enum):
+        BLACK = -1
+        WHITE = 1
+
     def __init__(self, blank_image_path, start_image_path, verbose=False):
         """
         Class constructor. Should be called only once at the start of the game.
+        Requires the image of the empty chessboard and the image of the chessboard with all pieces in initial position.
         Computes chessboard edges (costly), and builds training data for color classification using the start image.
 
         Args:
@@ -79,6 +87,7 @@ class ImageProcessor(object):
 
         if verbose:
             self.plot_chessboard_with_edges(self.empty_chessboard_image)
+            print("Training color classifier...")
 
         self.train_color_classifier()
 
@@ -97,7 +106,7 @@ class ImageProcessor(object):
                                                os.path.basename(image_path).rsplit(".", 1)[0])
             if not os.path.isdir(self.temp_image_dir):
                 os.makedirs(self.temp_image_dir)
-                print("Processing `{0}`...".format(os.path.basename(image_path)))
+            print("Processing `{0}`...".format(os.path.basename(image_path)))
 
         self.image = io.imread(image_path)
         self.n_rows, self.n_cols = self.image.shape[:2]  # TODO remove this
@@ -173,21 +182,38 @@ class ImageProcessor(object):
         return np.array(intersections), hough_lines
 
     def train_color_classifier(self):
+        """
+        Train the color classifier using the initial image,
+        for which we know the position of the pieces. We isolate an image of each of the 32
+        pieces, and we represent each of them by an RGB tuple corresponding to the average
+        color within a small disk centered on the middle of each square image.
+        We then train the classifier using these data and the pieces labels.
 
-        self.color_classifier = SVC()
+        In verbose mode, a PCA plot of the training data is saved in `temp_images`.
+        """
+
+        self.color_classifier = KNeighborsClassifier()
         initial_squares = self.cut_squares(self.initial_image, self._edges)
         training_data = np.zeros((32, 3))  # 32 pieces (16 black, 16 white), 3 color channels
-        training_labels = [-1 for _ in range(16)] + [1 for _ in range(16)]
-        for i in range(2):
-            for j in range(8):
-                square = initial_squares[i,j]
-                l_x, l_y = square.shape[:2]
-                x, y = np.ogrid[:l_x, :l_y]
-                disk_mask = (x - l_x / 2)**2 + (y - l_y / 2)**2 <= (l_x / 4)**2
-                # TODO here : retrieve the mean for each dimension
-                np.mean(square[disk_mask], axis=0)
-                training_data[i*8+j, :] = means
-        # TODO here: train color classifier
+        training_labels = [self.Color.BLACK for _ in range(16)] + [self.Color.WHITE for _ in range(16)]
+        pieces_indices = [(i, j) for i in [0, 1, 6, 7] for j in range(8)]
+
+        for k, index in enumerate(pieces_indices):
+            square = initial_squares[index]
+            training_data[k, :] = self.get_representative_color(square)
+
+        if self.verbose:
+            self.save_pca_plot(training_data, training_labels, self.TEMP_DIR)
+
+        self.color_classifier.fit(training_data, training_labels)
+
+    def save_pca_plot(self, X, labels, basedir):
+        pca = PCA(n_components=2)
+        X_r = pca.fit_transform(X)
+        plt.clf()
+        colors = ["brown" if k == self.Color.BLACK else "beige" for k in labels]
+        plt.scatter(X_r[:, 0], X_r[:, 1], color=colors, edgecolors="black")
+        plt.savefig(os.path.join(basedir, "colors_pca.jpg"))
 
     @staticmethod
     def cut_squares(input_image, edges):
@@ -271,9 +297,10 @@ class ImageProcessor(object):
 
     @staticmethod
     def get_representative_color(img):
-        x_center = math.floor(img.shape[0] / 2)
-        y_center = math.floor(img.shape[1] / 2)
-        return img[x_center, y_center]
+        l_x, l_y = img.shape[:2]
+        x, y = np.ogrid[:l_x, :l_y]
+        disk_mask = (x - l_x / 2) ** 2 + (y - l_y / 2) ** 2 <= (l_x / 4) ** 2
+        return np.mean(img[disk_mask], axis=0)
 
     @staticmethod
     def apply_to_matrix(f, M, odim):
@@ -290,11 +317,11 @@ class ImageProcessor(object):
         occupied_squares = np.reshape(self._occupancy_matrix, (64,))
         square_colors = square_colors[occupied_squares]
 
-        kmeans_predictions = KMeans(n_clusters=2, random_state=0).fit_predict(square_colors)
-        # use -1 and 1 as labels
-        kmeans_predictions[kmeans_predictions == 0] = -1
+        predictions = self.color_classifier.predict(square_colors)
+        if self.verbose:
+            self.save_pca_plot(square_colors, predictions, self.temp_image_dir)
         estimates = np.zeros((64,))
-        estimates[occupied_squares] = kmeans_predictions
+        estimates[occupied_squares] = predictions
         return np.reshape(estimates, (8, 8))
 
 
