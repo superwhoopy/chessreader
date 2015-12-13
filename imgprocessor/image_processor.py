@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+
 import math
 import operator
 import os
@@ -31,9 +31,9 @@ class ImageProcessor(object):
     it into a `BlindBoard` object. The main method is `process`.
     The following steps are applied to analyze the image:
 
-    At the beginning of the game:
+    At the beginning of the game (inside `__init__`) :
 
-    * CHESSBOARD LINES DETECTION: we use a Canny edge detector to turn the RGB image
+    * CHESSBOARD LINES DETECTION: we use a Canny edge detector to turn the RGB image of the empty chessboard
     into a binary image where the lines separating the squares of the chessboard are clearly visible.
     Then we use the Hough line detection algorithm and pick the 8 most likely horizontal and vertical
     lines in the image.
@@ -43,7 +43,7 @@ class ImageProcessor(object):
     For this classification, each datapoint is one piece, and each piece is represented by an RGB tuple
     corresponding to the average color within a small disk centered on the image of the piece.
 
-    For each new picture during the game:
+    For each new picture during the game:  (inside `process`)
 
     * OCCUPANCY MATRIX ESTIMATION: we determine for each square whether it is occupied or not.
     To do this, we take the absolute difference between the current image and the image of the empty chessboard.
@@ -55,8 +55,8 @@ class ImageProcessor(object):
     * BLINDBOARD ESTIMATION: for each occupied square, we use the color classifier to determine the
     color of the corresponding piece.
 
-
     """
+
     LINE_ANGLE_TOLERANCE = 0.1  # tolerance threshold (in radians) to filter horizontal and vertical lines
     OCCUPANCY_THRESHOLD = 0.2  # if a binary square image has more than this proportion of white pixels, it is considered occupied
     TEMP_DIR = "temp_images"  # name of directory where intermediary images will be stored
@@ -122,7 +122,7 @@ class ImageProcessor(object):
         self.n_rows, self.n_cols = self.image.shape[:2]  # TODO remove this
 
         if self.verbose:
-            self.save_image("image.jpg", self.image)
+            self.save_image("image.png", self.image)
             print("Computing occupancy matrix...")
 
         self.compute_occupancy_matrix()
@@ -203,7 +203,7 @@ class ImageProcessor(object):
         self.color_classifier = KNeighborsClassifier()
         initial_squares = self.cut_squares(self.initial_image, self._edges)
         training_data = np.zeros((32, 3))  # 32 pieces (16 black, 16 white), 3 color channels
-        training_labels = [Color.BLACK for _ in range(16)] + [Color.WHITE for _ in range(16)]
+        training_labels = [Color.BLACK.value for _ in range(16)] + [Color.WHITE.value for _ in range(16)]
         pieces_indices = [(i, j) for i in [0, 1, 6, 7] for j in range(8)]
 
         for k, index in enumerate(pieces_indices):
@@ -220,9 +220,9 @@ class ImageProcessor(object):
         pca = PCA(n_components=2)
         X_r = pca.fit_transform(X)
         plt.clf()
-        colors = ["brown" if k == Color.BLACK else "beige" for k in labels]
+        colors = ["brown" if k == Color.BLACK.value else "beige" for k in labels]
         plt.scatter(X_r[:, 0], X_r[:, 1], color=colors, edgecolors="black")
-        plt.savefig(os.path.join(basedir, "colors_pca.jpg"))
+        plt.savefig(os.path.join(basedir, "colors_pca.png"))
 
     @staticmethod
     def cut_squares(input_image, edges):
@@ -259,7 +259,7 @@ class ImageProcessor(object):
             plt.text(edge[0], edge[1], str(i), color='blue')
 
         plt.axis((0, n_cols, n_rows, 0))
-        plt.savefig(os.path.join(self.TEMP_DIR, "edges_and_squares.jpg"))
+        plt.savefig(os.path.join(self.TEMP_DIR, "edges_and_squares.png"))
 
     @staticmethod
     def plot_square_images(matrix, file_path):
@@ -289,10 +289,10 @@ class ImageProcessor(object):
         binary_diff_squares = self.cut_squares(binary_diff_image, self._edges)
 
         if self.verbose:
-            self.save_image("gamma_adj_image.jpg", adj_image)
-            self.save_image("diff_gray.jpg", diff_image)
-            self.save_image("diff_bw.jpg", binary_diff_image)
-            self.plot_square_images(binary_diff_squares, os.path.join(self.temp_image_dir, "diff_bw_squares.jpg"))
+            self.save_image("gamma_adj_image.png", adj_image)
+            self.save_image("diff_gray.png", diff_image)
+            self.save_image("diff_bw.png", binary_diff_image)
+            self.plot_square_images(binary_diff_squares, os.path.join(self.temp_image_dir, "diff_bw_squares.png"))
 
         self._processed_square_images = np.empty((8, 8), dtype=np.ndarray)
 
