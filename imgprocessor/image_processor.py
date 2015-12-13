@@ -12,6 +12,15 @@ from skimage.transform import hough_line, hough_line_peaks
 from skimage.filters import threshold_otsu
 from sklearn.neighbors import KNeighborsClassifier
 
+"""
+TODO (13/12/2015)
+* The whole thing works generally well, color detection is fine,
+but sometimes occupancy matrix has one or two errors.
+This might be due to an issue in the way the squares are isolated? or maybe the thresholding?
+* write a method to return an actual `BlindBoard` object based on the `self._blindboard_matrix`
+* write proper testing on a set of images
+"""
+
 
 class ImageProcessor(object):
     """
