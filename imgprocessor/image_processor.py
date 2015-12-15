@@ -18,11 +18,18 @@ from chess.board import BlindBoard, square_name
 
 """
 TODO (13/12/2015)
-* The whole thing works generally well, color detection is fine,
-but sometimes occupancy matrix can have errors because of the thresholding strategy
-Use a more general method ?
+* The whole thing works generally well, but some occasional mistakes
+* with Picture 15 and 17, `d7` is mislabeled as white
 * write proper testing on a set of images
 """
+
+
+class ImageProcessorException(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
 
 
 class ImageProcessor(object):
@@ -77,7 +84,6 @@ class ImageProcessor(object):
         self.empty_chessboard_image = io.imread(blank_image_path)
         self.initial_image = io.imread(start_image_path)
         self.image = None
-        self.n_rows, self.n_cols = None, None
         self.temp_image_dir = None
         self._hough_lines = None
         self._edges = None
@@ -119,7 +125,6 @@ class ImageProcessor(object):
             print("Processing `{0}`...".format(os.path.basename(image_path)))
 
         self.image = io.imread(image_path)
-        self.n_rows, self.n_cols = self.image.shape[:2]  # TODO remove this
 
         if self.verbose:
             self.save_image("image.png", self.image)
@@ -160,24 +165,25 @@ class ImageProcessor(object):
         min_distance = int(math.floor(image.shape[1] / 11))  # TODO better way?
         hough_peaks = hough_line_peaks(h, theta, d, min_distance=min_distance, threshold=40)  # TODO adjust
 
-        lines = {'horizontals': [], 'verticals': []}
+        vertical_lines = []
+        horizontal_lines = []
         intersections = []
 
         for intensity, theta, r in zip(*hough_peaks):
             if abs(theta) < self.LINE_ANGLE_TOLERANCE:
-                lines['verticals'].append((intensity, theta, r))
+                vertical_lines.append((intensity, theta, r))
             elif abs(abs(theta) - math.pi / 2) < self.LINE_ANGLE_TOLERANCE:
-                lines['horizontals'].append((intensity, abs(theta), abs(r)))
+                horizontal_lines.append((intensity, abs(theta), abs(r)))
 
         # only keep the 9 most significant lines of each direction
         # and sort them by radius, to return edges from top to bottom, and left to right
-        for key in lines:
-            lines[key].sort(reverse=True)
-            lines[key] = lines[key][0:9]
-            lines[key].sort(key=operator.itemgetter(2))
+        for lines in (horizontal_lines, vertical_lines):
+            lines.sort(reverse=True)
+            del lines[9:]
+            lines.sort(key=operator.itemgetter(2))
 
-        for _, theta1, r1 in lines['horizontals']:
-            for __, theta2, r2 in lines['verticals']:
+        for _, theta1, r1 in horizontal_lines:
+            for __, theta2, r2 in vertical_lines:
                 # can this be numerically unstable? denum is below 1e-10 in some cases here
                 denum = np.cos(theta1) * np.sin(theta2) - np.sin(theta1) * np.cos(theta2)
                 x_inter = (r1 * np.sin(theta2) - r2 * np.sin(theta1)) / denum
@@ -185,7 +191,7 @@ class ImageProcessor(object):
                 if 0 < x_inter < image.shape[1] and 0 < y_inter < image.shape[0]:
                     intersections.append((x_inter, y_inter))
 
-        hough_lines = lines['horizontals'] + lines['verticals']
+        hough_lines = horizontal_lines + vertical_lines
         # TODO we don't check that we get 9x9 intersections...
         return np.array(intersections), hough_lines
 
@@ -277,6 +283,7 @@ class ImageProcessor(object):
         plt.imsave(os.path.join(path, name), image, cmap=plt.cm.gray)
 
     def compute_occupancy_matrix(self):
+
         self._occupancy_matrix = np.empty((8, 8), dtype=bool)
         self._occupancy_matrix.fill(False)
 
@@ -334,14 +341,16 @@ class ImageProcessor(object):
         return np.reshape(estimates, (8, 8))
 
     def get_blindboard(self):
+        if self._blindboard_matrix is None:
+            raise ImageProcessorException("The `.process` method has not been called on this object yet")
         occupied_squares = {}
         for i in range(self._blindboard_matrix.shape[0]):
             for j in range(self._blindboard_matrix.shape[1]):
                 value = self._blindboard_matrix[i,j]
                 if value == Color.BLACK.value:
-                    occupied_squares[square_name(7-i,j)] = Color.BLACK
+                    occupied_squares[square_name(j,7-i)] = Color.BLACK
                 elif value == Color.WHITE.value:
-                    occupied_squares[square_name(7-i,j)] = Color.WHITE
+                    occupied_squares[square_name(j,7-i)] = Color.WHITE
         return BlindBoard(occupied_squares)
 
 
