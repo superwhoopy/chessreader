@@ -17,9 +17,7 @@ from chess import Color
 from chess.board import BlindBoard, square_name
 
 """
-TODO (13/12/2015)
-* The whole thing works generally well, but some occasional mistakes
-* with Picture 15 and 17, `d7` is mislabeled as white
+TODO (15/12/2015)
 * write proper testing on a set of images
 """
 
@@ -48,7 +46,8 @@ class ImageProcessor(object):
     * COLOR CLASSIFIER TRAINING: we train a k-nearest neighbour classifier to detect the black and
     white colors using the picture of the beginning of the game, where the position of each piece is known.
     For this classification, each datapoint is one piece, and each piece is represented by an RGB tuple
-    corresponding to the average color within a small disk centered on the image of the piece.
+    corresponding to the average color within the piece (the region of the piece is determined using
+    the same method as in occupancy matrix estimation, cf. next bullet point)
 
     For each new picture during the game:  (inside `process`)
 
@@ -212,9 +211,12 @@ class ImageProcessor(object):
         training_labels = [Color.BLACK.value for _ in range(16)] + [Color.WHITE.value for _ in range(16)]
         pieces_indices = [(i, j) for i in [0, 1, 6, 7] for j in range(8)]
 
+        binary_diff_squares = self.cut_squares(self.compute_binary_diff_image(self.initial_image), self._edges)
+
         for k, index in enumerate(pieces_indices):
             square = initial_squares[index]
-            training_data[k, :] = self.get_representative_color(square)
+            mask = binary_diff_squares[index]
+            training_data[k, :] = np.mean(square[mask], axis=0)
 
         if self.verbose:
             self.save_pca_plot(training_data, training_labels, self.TEMP_DIR)
@@ -287,18 +289,9 @@ class ImageProcessor(object):
         occupancy_matrix = np.empty((8, 8), dtype=bool)
         occupancy_matrix.fill(False)
 
-        # compute difference between starting and current image
-        adj_start_image = exposure.adjust_gamma(color.rgb2gray(self.empty_chessboard_image), 0.1)
-        adj_image = exposure.adjust_gamma(color.rgb2gray(self.image), 0.1)
-        diff_image = exposure.adjust_gamma(np.abs(adj_image - adj_start_image), 0.5)
-        binary_diff_image = diff_image > threshold_otsu(diff_image)
-
-        binary_diff_squares = self.cut_squares(binary_diff_image, self._edges)
+        binary_diff_squares = self.cut_squares(self.compute_binary_diff_image(self.image), self._edges)
 
         if self.verbose:
-            self.save_image("gamma_adj_image.png", adj_image)
-            self.save_image("diff_gray.png", diff_image)
-            self.save_image("diff_bw.png", binary_diff_image)
             self.plot_square_images(binary_diff_squares, os.path.join(self.temp_image_dir, "diff_bw_squares.png"))
 
         self._processed_square_images = np.empty((8, 8), dtype=np.ndarray)
@@ -313,12 +306,16 @@ class ImageProcessor(object):
 
         return occupancy_matrix
 
+    def compute_binary_diff_image(self, new_image):
+        # compute difference between starting and current image
+        adj_start_image = exposure.adjust_gamma(color.rgb2gray(self.empty_chessboard_image), 0.1)
+        adj_image = exposure.adjust_gamma(color.rgb2gray(new_image), 0.1)
+        diff_image = exposure.adjust_gamma(np.abs(adj_image - adj_start_image), 0.5)
+        return diff_image > threshold_otsu(diff_image)
+
     @staticmethod
-    def get_representative_color(img):
-        l_x, l_y = img.shape[:2]
-        x, y = np.ogrid[:l_x, :l_y]
-        disk_mask = (x - l_x / 2) ** 2 + (y - l_y / 2) ** 2 <= (l_x / 4) ** 2
-        return np.mean(img[disk_mask], axis=0)
+    def get_representative_color(img, mask_2d):
+        return np.mean(img[mask_2d], axis=0)
 
     @staticmethod
     def apply_to_matrix(f, M, odim):  # TODO remove this method
@@ -330,8 +327,12 @@ class ImageProcessor(object):
 
     def compute_blindboard_matrix(self):
         square_images = self.cut_squares(self.image, self._edges)
-        square_colors = self.apply_to_matrix(self.get_representative_color, square_images, 3)
-        square_colors = np.reshape(square_colors, (64, 3))
+        square_colors = np.zeros((64, 3))
+        for k, ((i,j), square_image) in enumerate(np.ndenumerate(square_images)):
+            if self._occupancy_matrix[i,j]:
+                piece_mask = self._processed_square_images[i,j]
+                square_colors[k,] = np.mean(square_image[piece_mask], axis=0)
+
         occupied_squares = np.reshape(self._occupancy_matrix, (64,))
         square_colors = square_colors[occupied_squares]
 
