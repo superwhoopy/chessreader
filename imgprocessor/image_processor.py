@@ -68,20 +68,20 @@ class ImageProcessor(object):
     OCCUPANCY_THRESHOLD = 0.2  # if a binary square image has more than this proportion of white pixels, it is considered occupied
     TEMP_DIR = "temp_images"  # name of directory where intermediary images will be stored
 
-    def __init__(self, blank_image_path, start_image_path, verbose=False):
+    def __init__(self, empty_chessboard_image_path, start_image_path, verbose=False):
         """
         Class constructor. Should be called only once at the start of the game.
         Requires the image of the empty chessboard and the image of the chessboard with all pieces in initial position.
         Computes chessboard edges (costly), and builds training data for color classification using the start image.
 
         Args:
-            blank_image_path: path to the image of the empty chessboard.
+            empty_chessboard_image_path: path to the image of the empty chessboard.
             start_image_path: path to the image of the chessboard with all pieces in initial position.
             verbose: if `True`, logging messages will be displayed and intermediary images
                 will be saved in the current directory inside the `temp_images` folder.
         """
 
-        self.empty_chessboard_image = io.imread(blank_image_path)
+        self.empty_chessboard_image = io.imread(empty_chessboard_image_path)
         self.initial_image = io.imread(start_image_path)
         self.image = None
         self.temp_image_dir = None
@@ -130,7 +130,7 @@ class ImageProcessor(object):
             self.save_image("image.png", self.image)
             print("Computing occupancy matrix...")
 
-        self.compute_occupancy_matrix()
+        self._occupancy_matrix = self.compute_occupancy_matrix()
 
         if reference is not None:
             print("Occupancy matrix estimation")
@@ -284,8 +284,8 @@ class ImageProcessor(object):
 
     def compute_occupancy_matrix(self):
 
-        self._occupancy_matrix = np.empty((8, 8), dtype=bool)
-        self._occupancy_matrix.fill(False)
+        occupancy_matrix = np.empty((8, 8), dtype=bool)
+        occupancy_matrix.fill(False)
 
         # compute difference between starting and current image
         adj_start_image = exposure.adjust_gamma(color.rgb2gray(self.empty_chessboard_image), 0.1)
@@ -308,8 +308,10 @@ class ImageProcessor(object):
                 square = binary_diff_squares[i, j]
                 n_pixels = square.shape[0] * square.shape[1]
                 # TODO improve this rule ?
-                self._occupancy_matrix[i, j] = np.sum(square) / n_pixels > self.OCCUPANCY_THRESHOLD
+                occupancy_matrix[i, j] = np.sum(square) / n_pixels > self.OCCUPANCY_THRESHOLD
                 self._processed_square_images[i, j] = square
+
+        return occupancy_matrix
 
     @staticmethod
     def get_representative_color(img):
