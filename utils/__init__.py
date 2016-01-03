@@ -1,4 +1,4 @@
-import utils
+from . import log
 
 import subprocess
 import queue

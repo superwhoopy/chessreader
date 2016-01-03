@@ -1,3 +1,4 @@
+from . import board
 from enum import Enum
 
 class Color(Enum):

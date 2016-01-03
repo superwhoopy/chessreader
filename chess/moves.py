@@ -9,9 +9,9 @@ import utils
 
 ################################################################################
 
-RE_MOVE = re.compile( r'((?P<move_count>\d+)\. )?'   \
-                      r'(?P<black_move>\.\.\. )?'    \
-                      r'(?P<from_square>[abcdefgh][12345678])' \
+RE_MOVE = re.compile( r'((?P<move_count>\d+)\. )?'
+                      r'(?P<black_move>\.\.\. )?'
+                      r'(?P<from_square>[abcdefgh][12345678])'
                       r'(?P<to_square>[abcdefgh][12345678])')
 '''Regexp parsing a move.
 
@@ -150,9 +150,9 @@ class Promote(Move):
         self.promote_to = promote_to
 
     def __eq__(self, other):
-        return super(Promote, self).__eq__(self,other) and \
+        return super(Promote, self).__eq__(other) and \
                self.promote_to == other.promote_to
 
     def __str__(self):
-        return super(Promote, self).__str__(self) + \
+        return super(Promote, self).__str__() + \
                '={}'.format(self.promote_to.value)

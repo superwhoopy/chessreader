@@ -84,7 +84,7 @@ def square_coordinates(square):
     row_name = square[1]
 
     x_pos = COL_NAMES.index(col_name)
-    y_pos = row_name - 1
+    y_pos = int(row_name) - 1
 
     return x_pos, y_pos
 
