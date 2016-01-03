@@ -5,37 +5,26 @@ from enum import Enum
 import utils.log
 import tests
 import core
-
-class CaptureShell(cmd.Cmd):
-    prompt = ' (capture) '
-
-    core   = core.Core()
-
-    def do_read(self, arg):
-        'Capture a picture of the board and process it'
-        self.core.run()
-
-    def do_end(self, arg):
-        'End capturing mode and return to main shell'
-        utils.log.info("leaving capture mode")
-        return True
-
-
+import engine
+import chess
 
 
 class Shell(cmd.Cmd):
 
-    class State(Enum):
-        BASE    = 0
-        CAPTURE = 1
-
     intro  = 'Welcome to chessreader shell! Type your command:\n'
     prompt = ' (chessreader) '
 
-    state = State.BASE
+    core = None
+
+    # TODO: make it a decorator
+    def ensure_game_is_on(self):
+        if core is None:
+            utils.log.warn('no game currently active - run start first')
+            return False
+        return True
 
     def emptyline(self):
-        pass
+        self.do_read("")
 
     def do_test(self, arg):
         'Run the chessreader test suite'
@@ -44,11 +33,16 @@ class Shell(cmd.Cmd):
 
     def do_start(self, arg):
         'Start a new game'
-        CaptureShell().cmdloop()
+        self.core = core.Core()
+
+    def do_takeback(self, arg):
+        pass
+
+    def do_read(self, arg):
+        self.core.run()
 
     def do_quit(self, arg):
         'Leave the shell and end the program'
-
         utils.log.info("quitting; bye!")
         sys.exit(0)
 

@@ -1,3 +1,8 @@
+'''
+The diffreader module main purpose is to turn BlindBoard.Diff objects into valid
+chess.Move objects, or to throw an error if the move is invalid.
+'''
+
 import core
 import utils
 
@@ -65,6 +70,7 @@ def read(blind_board_diff):
         return castling_move
 
     # TODO check for promotion move
+    # TODO check for 'en passant'
 
     # OK, so this oughta be a simple move or a take: print out some debug
     # message

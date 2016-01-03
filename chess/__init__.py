@@ -1,9 +1,5 @@
+from . import board
 from enum import Enum
-
-class PlayMode(Enum):
-    '''TODO'''
-    ONE_PLAYER = 1
-    TWO_PLAYERS = 2
 
 class Color(Enum):
     '''Chess pieces color representation'''
@@ -17,16 +13,9 @@ class Color(Enum):
         return Color.WHITE if color == Color.BLACK \
                else Color.BLACK
 
-
-class ChessEngine:
-    '''TODO'''
-
-    def __init__(self, playmode):
-        assert playmode in PlayMode
-
-    def play_move(self, player, move):
-        pass
-
-    def read_move(self):
-        pass
+class Piece(Enum):
+    QUEEN  = 'Q'
+    ROOK   = 'R'
+    BISHOP = 'B'
+    KNIGHT = 'N'
 
