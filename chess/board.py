@@ -205,9 +205,6 @@ def build_start_pos_blind_board():
               for col in 'abcdefgh' for row in '1278'}
     return BlindBoard(filled)
 
-filled = {'{}{}'.format(col,row): 'white' if row in '12' else 'black'
-              for col in 'abcdefgh' for row in '1278'}
-
 BLIND_EMPTY = BlindBoard()
 '''Empty board representation'''
 
