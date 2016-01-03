@@ -201,15 +201,12 @@ class BlindBoard:
 
 def build_start_pos_blind_board():
     'Return a blind board for the starting position'
-    filled = {}
-    for col in 'abcdefgh':
-        for row in '12':
-            square = '{}{}'.format(col,row)
-            filled[square] = chess.Color.WHITE
-        for row in '78':
-            square = '{}{}'.format(col,row)
-            filled[square] = chess.Color.BLACK
+    filled = {'{}{}'.format(col,row): chess.Color.WHITE if row in '12' else chess.Color.BLACK
+              for col in 'abcdefgh' for row in '1278'}
     return BlindBoard(filled)
+
+filled = {'{}{}'.format(col,row): 'white' if row in '12' else 'black'
+              for col in 'abcdefgh' for row in '1278'}
 
 BLIND_EMPTY = BlindBoard()
 '''Empty board representation'''
