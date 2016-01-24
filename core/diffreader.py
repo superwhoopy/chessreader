@@ -2,20 +2,23 @@
 The diffreader module main purpose is to turn BlindBoard.Diff objects into valid
 chess.Move objects, or to throw an error if the move is invalid.
 '''
+import chess
+from chess import Move
 
+from ..chessboard.board import BlindBoard
 from .. import core, utils
-from ..chess.moves import Castling, Move
-from ..chess.board import BlindBoard
 
-CASTLING_DIFF = {
-    Castling.Side.KING :
-        [ BlindBoard.Diff({'e1', 'h1'}, {'f1','g1'}, set()),
-          BlindBoard.Diff({'e8', 'h8'}, {'f8','g8'}, set()) ],
+# list of blindboard diffs for castling moves, and the corresponding moves (as encoded in UCI)
+CASTLING_DIFFS = [
+    # king-side
+    (BlindBoard.Diff({chess.E1, chess.H1}, {chess.F1, chess.G1}, set()), Move(chess.E1, chess.G1)),
+    (BlindBoard.Diff({chess.E8, chess.H8}, {chess.F8, chess.G8}, set()), Move(chess.E8, chess.G8)),
 
-    Castling.Side.QUEEN :
-        [ BlindBoard.Diff({'e1', 'a1'}, {'c1','d1'}, set()),
-          BlindBoard.Diff({'e8', 'a8'}, {'c8','d8'}, set()) ],
-}
+    # queen-side
+    (BlindBoard.Diff({chess.E1, chess.A1}, {chess.C1, chess.D1}, set()), Move(chess.E1, chess.C1)),
+    (BlindBoard.Diff({chess.E8, chess.A1}, {chess.C8, chess.D8}, set()), Move(chess.E8, chess.C8))
+]
+
 
 class DiffLength:
     CASTLING = (2, 2, 0)
@@ -23,7 +26,7 @@ class DiffLength:
     SIMPLE   = (1, 1, 0)
 
     # TODO: find a pythonic way to do this...
-    valid    = [ CASTLING, TAKE, SIMPLE ]
+    valid    = { CASTLING, TAKE, SIMPLE }
 
 ################################################################################
 
@@ -47,9 +50,9 @@ def _read_castling(diff):
     if diff.length() != DiffLength.CASTLING:
         return False
 
-    for side, difflist in CASTLING_DIFF.items():
-        if diff in difflist:
-            return Castling(side)
+    for castling_diff, castling_move in CASTLING_DIFFS:
+        if castling_diff == diff:
+            return castling_move
 
     raise core.IllegalMove('odd move(s) detected in diff: {}'.format(diff))
 

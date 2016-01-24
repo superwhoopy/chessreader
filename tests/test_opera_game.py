@@ -3,6 +3,7 @@ from .. import core, engine
 from . import utils
 from .fen_games.opera import GAME
 
+# TODO use python-chess for this
 def test_opera():
     # start by building all the blind boards of the Game
     blind_boards = utils.read_FEN_game(GAME)

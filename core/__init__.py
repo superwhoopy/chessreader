@@ -1,6 +1,6 @@
 
 from . import diffreader
-from .. import utils, chess, imgprocessor, engine
+from .. import utils, chessboard, imgprocessor, engine
 
 from enum import Enum
 
@@ -22,7 +22,7 @@ class Core:
     def __init__(self):
         self.capture_engine        = imgprocessor.CaptureEngine()
         self.chess_engine          = engine.GnuChess()
-        self.last_valid_chessboard = chess.board.BLIND_START
+        self.last_valid_chessboard = chessboard.board.START_BLINDBOARD
 
     def run(self):
         pass

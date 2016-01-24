@@ -1,18 +1,18 @@
-from .. import chess
+from .. import chessboard
 
 
 def _build_conversion_dict():
     '''Builds `CONVERSION_DICT` global const var'''
     conversion_dict = {}
     for char in 'rnbqkp':
-        conversion_dict[char] = chess.Color.BLACK
+        conversion_dict[char] = chessboard.Color.BLACK
     for char in 'RNBQKP':
-        conversion_dict[char] = chess.Color.WHITE
+        conversion_dict[char] = chessboard.Color.WHITE
     conversion_dict['.'] = None
     return conversion_dict
 
 '''Conversion dict: indexes are FEN characters, value is `None` for an empty
-square, or one of `chess.Color` if the square is occuppied'''
+square, or one of `chessboard.Color` if the square is occuppied'''
 CONVERSION_DICT = _build_conversion_dict()
 
 ################################################################################
@@ -53,12 +53,11 @@ R N B Q K B N R
     # split into board lines
     fen = fen.split('\n')
     # remove first and last empty lines
-    assert len(fen)==10
+    assert len(fen) == 10
     fen = fen[1:9]
 
     # dict of occupied square to be built
     occupied_squares = {}
-
 
     # browse the fen representation line by line
     for line in range(0, 8):
@@ -71,11 +70,11 @@ R N B Q K B N R
             chessboard_col  = col
             chessboard_line = 7 - line
             square_name = \
-                chess.board.square_name(chessboard_col, chessboard_line)
+                chessboard.board.square_name(chessboard_col, chessboard_line)
             if piece_color is not None:
                 occupied_squares[square_name] = piece_color
 
-    return chess.board.BlindBoard(occupied_squares)
+    return chessboard.board.BlindBoard(occupied_squares)
 
 def read_FEN_game(game):
     '''Convert a set of FEN position into a list of `BlindBoard` objects

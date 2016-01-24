@@ -6,26 +6,11 @@ global `ALL_SQUARES` is a list of all of the square names.
 The module also provides a `BlindBoard` class used to represent a board where
 pieces are only distinguished by their color.
 '''
-from enum import Enum
+import chess
+from chess import BaseBoard
+
 from .. import utils
 
-class Color(Enum):
-    '''Chess pieces color representation'''
-    WHITE = 1
-    BLACK = 2
-
-    @staticmethod
-    def opposite(color):
-        '''Invert a `Color`: `BLACK` becomes `WHITE` and conversely'''
-        assert color in Color
-        return Color.WHITE if color == Color.BLACK \
-               else Color.BLACK
-
-class Piece(Enum):
-    QUEEN  = 'Q'
-    ROOK   = 'R'
-    BISHOP = 'B'
-    KNIGHT = 'N'
 
 ################################################################################
 # EXCEPTIONS
@@ -47,63 +32,9 @@ class MalformedSquareName(Exception):
 # coordinate, such as 'a1', 'e2', 'h8', etc. (lower-case letter followed by an
 # integer) The following variables define these identifiers.
 
-COL_NAMES = 'abcdefgh'
-'''Names of all the columns on a chessboard'''
 
-ROW_NAMES = range(1, 9)
-'''Names of all the rows on a chessboard'''
-
-ALL_SQUARES = [ '{}{}'.format(col, row) for col in COL_NAMES \
-                                        for row in ROW_NAMES ]
-'''Identifiers of all of the 64 squares on a chessboard'''
-
-
-
-def square_name(x_pos, y_pos):
-    '''Convert square coordinates into a square identifier
-
-    Note: square 'a1' matches coordinates (0,0); other squares follow...
-
-    Args:
-        x_pos (int): x-coordinate of the square, in `range(0,7)`
-        y_pos (int): y-coordinate of the square, in `range(0,7)`
-
-    Returns:
-        string: a square-identifier, member of `ALL_SQUARES`
-
-    Raises:
-        SquareOutOfBounds: when (x_pos, y_pos) is outside of the chessboard,
-            i.e. if one of the coordinates is not in [0,7].
-    '''
-    if x_pos not in range(0,8) or y_pos not in range(0,8):
-        raise SquareOutOfBounds
-    name = "{}{}".format(COL_NAMES[x_pos], y_pos+1)
-    return name
-
-
-
-def square_coordinates(square):
-    '''Convert a square identifier into a pair of coordinates
-
-    Note: square 'a1' matches coordinates (0,0); other squares follow...
-
-    Args:
-        square (str): square identifier, must be in `ALL_SQUARES`
-
-    Returns:
-        int, int: a pair of (x,y) coordinates in `range(0,7), range(0,7)`
-    '''
-    if square not in ALL_SQUARES:
-        raise MalformedSquareName
-
-    col_name = square[0]
-    row_name = square[1]
-
-    x_pos = COL_NAMES.index(col_name)
-    y_pos = int(row_name) - 1
-
-    return x_pos, y_pos
-
+WHITE_START_SQUARES = range(16)
+BLACK_START_SQUARES = range(48, 64)
 
 
 ################################################################################
@@ -111,6 +42,10 @@ def square_coordinates(square):
 ################################################################################
 
 
+# TODO BlindBoard could inherit from chess.SquareSet
+# a SquareSet is a binary mask representing which squares are occpuied on a board
+# we could override the constructor and add a second binary mask indicating the colors
+# in fact a blindboard is exactly the same as the occupied_co attribute on BaseBoard objects
 
 class BlindBoard:
     '''Semi-blind chessboard representation
@@ -134,6 +69,7 @@ class BlindBoard:
         color has changed'''
 
         def __init__(self, emptied, filled, changed):
+
             self.emptied = emptied
             self.filled = filled
             self.changed = changed
@@ -182,8 +118,8 @@ class BlindBoard:
             return
         for square, color in occupied_squares.items():
             # TODO: assert or exceptions?
-            assert square in ALL_SQUARES
-            assert color  in Color
+            assert square in chess.SQUARES
+            assert color  in chess.COLORS
         self.occupied_squares = occupied_squares
 
     def __eq__(self, other):
@@ -199,10 +135,10 @@ class BlindBoard:
                     if s not in board_from.occupied_squares }
 
         changed = \
-            { s for s in self.occupied_squares
-                    if s in board_from.occupied_squares and
-                       board_from.occupied_squares[s] ==
-                           Color.opposite(self.occupied_squares[s]) }
+            {s for s in self.occupied_squares
+             if s in board_from.occupied_squares and
+             board_from.occupied_squares[s] == (not self.occupied_squares[s])
+            }
 
         return BlindBoard.Diff(emptied, filled, changed)
 
@@ -210,26 +146,26 @@ class BlindBoard:
         self.occupied_squares = dict()
 
     def add_piece(self, square, color):
-        assert square in ALL_SQUARES
-        assert color  in Color
+        assert square in chess.SQUARES
+        assert color  in chess.COLORS
         self.occupied_squares[square] = color
 
+    @staticmethod
+    def from_board(board):
+        # create a BlindBoard from a chess.Board object
+        occupied_squares = {}
+        board.occupied_co[chess.COLORS.WHITE]
 
 def build_start_pos_blind_board():
     'Return a blind board for the starting position'
-    filled = {}
-    for col in 'abcdefgh':
-        for row in '12':
-            square = '{}{}'.format(col,row)
-            filled[square] = Color.WHITE
-        for row in '78':
-            square = '{}{}'.format(col,row)
-            filled[square] = Color.BLACK
+    filled = {white_square: chess.WHITE for white_square in WHITE_START_SQUARES}
+    filled.update({black_square: chess.BLACK for black_square in BLACK_START_SQUARES})
+
     return BlindBoard(filled)
 
-BLIND_EMPTY = BlindBoard()
+EMPTY_BLINDBOARD = BlindBoard()
 '''Empty board representation'''
 
-BLIND_START = build_start_pos_blind_board()
+START_BLINDBOARD = build_start_pos_blind_board()
 '''Board with pieces in starting position'''
 

@@ -1,6 +1,6 @@
 from .. import utils
-from ..chess import Color
-from ..chess.moves import Move
+from ..chessboard import Color
+from ..chessboard.moves import Move
 
 import pexpect
 

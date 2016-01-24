@@ -6,14 +6,15 @@ import random
 
 import numpy as np
 import matplotlib.pyplot as plt
+from chess import COLORS
 from skimage.filters import threshold_otsu
 from sklearn.decomposition import PCA
 from skimage import feature, io, color, exposure
 from skimage.transform import hough_line, hough_line_peaks
 from sklearn.neighbors import KNeighborsClassifier
 
-from chess import Color
-from chess.board import BlindBoard, square_name
+from chessboard import Color
+from chessboard.board import BlindBoard, square_name
 
 """
 TODO (15/12/2015)
@@ -349,16 +350,16 @@ class ImageProcessor(object):
         for i in range(self._blindboard_matrix.shape[0]):
             for j in range(self._blindboard_matrix.shape[1]):
                 value = self._blindboard_matrix[i,j]
-                if value == Color.BLACK.value:
-                    occupied_squares[square_name(j,7-i)] = Color.BLACK
-                elif value == Color.WHITE.value:
-                    occupied_squares[square_name(j,7-i)] = Color.WHITE
+                if value == COLORS.BLACK:
+                    occupied_squares[square_name(j,7-i)] = COLORS.BLACK
+                elif value == COLORS.WHITE:
+                    occupied_squares[square_name(j,7-i)] = COLORS.WHITE
         return BlindBoard(occupied_squares)
 
 
 if __name__ == "__main__":
 
-    IMAGES_FOLDER = '/Users/daniel/Desktop/chess/chess-pictures-other'
+    IMAGES_FOLDER = '/Users/daniel/Desktop/chessboard/chessboard-pictures-other'
     base_img = os.path.join(IMAGES_FOLDER, 'Picture 13.jpg')
     start_img = os.path.join(IMAGES_FOLDER, 'Picture 14.jpg')
     test_files = [os.path.join(IMAGES_FOLDER, f) for f in os.listdir(IMAGES_FOLDER)
