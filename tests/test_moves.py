@@ -1,5 +1,5 @@
 import nose.tools
-import chess
+from .. import chess
 
 def test_from_string():
     test_cases = {

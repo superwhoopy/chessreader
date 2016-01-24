@@ -1,14 +1,11 @@
-import nose.tools
 
-import core
-import engine
-
-import tests.utils
-from tests.fen_games.opera import GAME
+from .. import core, engine
+from . import utils
+from .fen_games.opera import GAME
 
 def test_opera():
     # start by building all the blind boards of the Game
-    blind_boards = tests.utils.read_FEN_game(GAME)
+    blind_boards = utils.read_FEN_game(GAME)
 
     # build the list of moves
     moves = [ core.diffreader.read(to_position.diff(from_position))

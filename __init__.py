@@ -4,11 +4,7 @@ import argparse
 import sys
 import colorama
 
-import chess
-import imgprocessor
-import tests
-import utils.log
-import shell
+from . import tests, utils, shell
 
 ################################################################################
 

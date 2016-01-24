@@ -1,8 +1,6 @@
-import imgprocessor
-import chess.board
-import engine
-import core
-import utils
+
+from . import diffreader
+from .. import utils, chess, imgprocessor, engine
 
 from enum import Enum
 
@@ -35,7 +33,7 @@ class Core:
 
         board_diff = new_chessboard.diff(self.last_valid_chessboard)
         try:
-            move = core.diffreader.read(board_diff)
+            move = diffreader.read(board_diff)
         except IllegalMove as move:
             utils.log.warn(move)
 

@@ -1,4 +1,4 @@
-import chess
+from .. import chess
 
 
 def _build_conversion_dict():

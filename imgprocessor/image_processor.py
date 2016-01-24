@@ -6,11 +6,10 @@ import random
 
 import numpy as np
 import matplotlib.pyplot as plt
-
+from skimage.filters import threshold_otsu
 from sklearn.decomposition import PCA
 from skimage import feature, io, color, exposure
 from skimage.transform import hough_line, hough_line_peaks
-from skimage.filters import threshold_otsu
 from sklearn.neighbors import KNeighborsClassifier
 
 from chess import Color

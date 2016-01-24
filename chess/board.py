@@ -6,10 +6,26 @@ global `ALL_SQUARES` is a list of all of the square names.
 The module also provides a `BlindBoard` class used to represent a board where
 pieces are only distinguished by their color.
 '''
+from enum import Enum
+from .. import utils
 
-import chess
-import utils
-import utils.log
+class Color(Enum):
+    '''Chess pieces color representation'''
+    WHITE = 1
+    BLACK = 2
+
+    @staticmethod
+    def opposite(color):
+        '''Invert a `Color`: `BLACK` becomes `WHITE` and conversely'''
+        assert color in Color
+        return Color.WHITE if color == Color.BLACK \
+               else Color.BLACK
+
+class Piece(Enum):
+    QUEEN  = 'Q'
+    ROOK   = 'R'
+    BISHOP = 'B'
+    KNIGHT = 'N'
 
 ################################################################################
 # EXCEPTIONS
@@ -167,7 +183,7 @@ class BlindBoard:
         for square, color in occupied_squares.items():
             # TODO: assert or exceptions?
             assert square in ALL_SQUARES
-            assert color  in chess.Color
+            assert color  in Color
         self.occupied_squares = occupied_squares
 
     def __eq__(self, other):
@@ -186,16 +202,16 @@ class BlindBoard:
             { s for s in self.occupied_squares
                     if s in board_from.occupied_squares and
                        board_from.occupied_squares[s] ==
-                           chess.Color.opposite(self.occupied_squares[s]) }
+                           Color.opposite(self.occupied_squares[s]) }
 
-        return chess.board.BlindBoard.Diff(emptied, filled, changed)
+        return BlindBoard.Diff(emptied, filled, changed)
 
     def clear(self):
         self.occupied_squares = dict()
 
     def add_piece(self, square, color):
         assert square in ALL_SQUARES
-        assert color  in chess.Color
+        assert color  in Color
         self.occupied_squares[square] = color
 
 
@@ -205,10 +221,10 @@ def build_start_pos_blind_board():
     for col in 'abcdefgh':
         for row in '12':
             square = '{}{}'.format(col,row)
-            filled[square] = chess.Color.WHITE
+            filled[square] = Color.WHITE
         for row in '78':
             square = '{}{}'.format(col,row)
-            filled[square] = chess.Color.BLACK
+            filled[square] = Color.BLACK
     return BlindBoard(filled)
 
 BLIND_EMPTY = BlindBoard()

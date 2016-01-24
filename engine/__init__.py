@@ -1,9 +1,8 @@
-import utils
-from chess import Color
-from chess.moves import Move
+from .. import utils
+from ..chess import Color
+from ..chess.moves import Move
 
 import pexpect
-import time
 
 class GnuChess:
     '''TODO'''

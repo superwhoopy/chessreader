@@ -1,12 +1,7 @@
 import cmd
 import sys
-from enum import Enum
 
-import utils.log
-import tests
-import core
-import engine
-import chess
+from .. import utils, tests, core
 
 
 class Shell(cmd.Cmd):

@@ -1,5 +1,6 @@
 import nose.tools
-import chess.board
+
+from .. import chess
 
 def setUp():
     pass

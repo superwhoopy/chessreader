@@ -3,9 +3,9 @@
 from enum import Enum
 import re
 
-import chess
-from chess import Color
-import utils
+from . import board
+from .board import Color, Piece
+from .. import utils
 
 ################################################################################
 
@@ -62,8 +62,8 @@ class Move:
             color    (`Color`): optional, `Color.WHITE` or `Color.BLACK` to tell
                who plays this move
         '''
-        assert from_square in chess.board.ALL_SQUARES
-        assert to_square   in chess.board.ALL_SQUARES
+        assert from_square in board.ALL_SQUARES
+        assert to_square   in board.ALL_SQUARES
 
         self.from_square = from_square
         self.to_square   = to_square
@@ -87,7 +87,7 @@ class Move:
 
         if self.move_count is not None:
             move_count_str = '{}. '.format(self.move_count)
-        if self.color == chess.Color.BLACK:
+        if self.color == Color.BLACK:
             color_str = '... '
 
         return move_count_str + color_str + self.__str__()
@@ -133,13 +133,13 @@ class Promote(Move):
                  move_count=None, color=None):
         '''TODO'''
         # sanity checks
-        assert promote_to in chess.Piece
+        assert promote_to in Piece
         expected_line = {
-                chess.Color.WHITE : [7],
-                chess.Color.BLACK : [0],
+                Color.WHITE : [7],
+                Color.BLACK : [0],
                 None              : [0, 7],
                 }
-        _, line = chess.board.square_coordinates(to_square)
+        _, line = board.square_coordinates(to_square)
         assert line in expected_line
 
         # call parent ctor

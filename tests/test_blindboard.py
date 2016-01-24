@@ -3,8 +3,8 @@
 
 import nose.tools
 
-import chess.board
-from chess import Color
+from .. import chess
+from ..chess import Color
 
 def setUp():
     pass

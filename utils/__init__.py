@@ -1,5 +1,4 @@
 from . import log
-
 import subprocess
 import queue
 from threading import Thread
@@ -75,7 +74,7 @@ class Proc:
                             stdout = subprocess.PIPE,
                             stderr = subprocess.PIPE)
         except (subprocess.SubprocessError, OSError) :
-            utils.log.error('unable to fork {}'.format(cmdline))
+            log.error('unable to fork {}'.format(cmdline))
 
         # launch a thread that continuously reads from stdout of the process
         self.reader = StreamReader(self.proc.stdout, self._stdout_queue)

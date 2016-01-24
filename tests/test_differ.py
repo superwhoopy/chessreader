@@ -1,9 +1,8 @@
 import nose.tools
 
-import chess.board
-import chess.moves
-from chess import Color as Color
-import core.diffreader
+from .. import chess, core
+from ..chess import Color
+
 
 WHITE_START_SQUARES = [ '{}{}'.format(col, row)
                                 for col in chess.board.COL_NAMES
