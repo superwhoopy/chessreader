@@ -9,7 +9,7 @@ pieces are only distinguished by their color.
 
 from string import ascii_lowercase, ascii_uppercase
 from chess import (BaseBoard, Piece, STARTING_BOARD_FEN, BLACK,
-                   WHITE, PAWN, SQUARE_NAMES, BB_H8)
+                   WHITE, PAWN, SQUARE_NAMES, BB_H8, BB_VOID)
 
 
 
@@ -123,15 +123,15 @@ class BlindBoard(BaseBoard):
     class Diff:
         '''Diff between two BlindBoard'''
 
-        emptied = {}
-        '''Set of squares that were emptied'''
+        emptied = BB_VOID
+        '''Binary mask representing the set of squares that were emptied'''
 
-        filled  = {}
-        '''Set of squares that were filled'''
+        filled  = BB_VOID
+        '''Binary mask representing the set of squares that were filled'''
 
-        changed = {}
-        '''Set of squares that were occuppied and still are, but whose piece
-        color has changed'''
+        changed = BB_VOID
+        '''Binary mask representing the set of squares that were occuppied
+        and still are, but whose piece color has changed'''
 
         def __init__(self, emptied, filled, changed):
 
