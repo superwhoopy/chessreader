@@ -172,7 +172,7 @@ class BlindBoard(BaseBoard):
             '''
             pieces = set()
             k = 1 ; i = 0
-            while k <= (1 << BB_H8):
+            while k <= BB_H8:
                 if k & n:
                     pieces.add(i)
                 k <<= 1 ; i += 1
