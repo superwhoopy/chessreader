@@ -1,3 +1,2 @@
 
-from . import board, moves
-from .board import Color, Piece
+from . import board

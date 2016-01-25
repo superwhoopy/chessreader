@@ -11,12 +11,12 @@ from .. import core, utils
 # list of blindboard diffs for castling moves, and the corresponding moves (as encoded in UCI)
 CASTLING_DIFFS = [
     # king-side
-    (BlindBoard.Diff({chess.E1, chess.H1}, {chess.F1, chess.G1}, set()), Move(chess.E1, chess.G1)),
-    (BlindBoard.Diff({chess.E8, chess.H8}, {chess.F8, chess.G8}, set()), Move(chess.E8, chess.G8)),
+    (BlindBoard.Diff(chess.BB_E1 | chess.BB_H1, chess.BB_F1 | chess.BB_G1, 0), Move(chess.E1, chess.G1)),
+    (BlindBoard.Diff(chess.BB_E8 | chess.BB_H8, chess.BB_F8 | chess.BB_G8, 0), Move(chess.E8, chess.G8)),
 
     # queen-side
-    (BlindBoard.Diff({chess.E1, chess.A1}, {chess.C1, chess.D1}, set()), Move(chess.E1, chess.C1)),
-    (BlindBoard.Diff({chess.E8, chess.A1}, {chess.C8, chess.D8}, set()), Move(chess.E8, chess.C8))
+    (BlindBoard.Diff(chess.BB_E1 | chess.BB_A1, chess.BB_C1 | chess.BB_D1, 0), Move(chess.E1, chess.C1)),
+    (BlindBoard.Diff(chess.BB_E8 | chess.BB_A8, chess.BB_C8 | chess.BB_D8, 0), Move(chess.E8, chess.C8))
 ]
 
 
@@ -30,21 +30,26 @@ class DiffLength:
 
 ################################################################################
 
+
 def _diff_is_take(diff):
     # take move: one filled, none emptied, one changed
     return diff.length() == DiffLength.TAKE
+
 
 def _diff_is_simple_move(diff):
     # simple move: one filled, one emptied, zero changed
     return diff.length() == DiffLength.SIMPLE
 
+
 def _diff_sanity_check(diff):
     # sanity check on the board diff
     if diff.length() not in DiffLength.valid:
         raise core.IllegalMove(
-             'odd move(s) detected in diff: {}'.format(diff))
+             'odd move(s) detected in diff: {} (unexpected diff length: {})'.format(diff, diff.length())
+        )
 
 ################################################################################
+
 
 def _read_castling(diff):
     if diff.length() != DiffLength.CASTLING:
@@ -54,7 +59,9 @@ def _read_castling(diff):
         if castling_diff == diff:
             return castling_move
 
-    raise core.IllegalMove('odd move(s) detected in diff: {}'.format(diff))
+    raise core.IllegalMove('odd move(s) detected in diff: {} '
+                           '(the move has the length of a castling but does not match any)'.format(diff)
+    )
 
 
 def read(blind_board_diff):
@@ -85,11 +92,11 @@ def read(blind_board_diff):
     # get the square the move came from, the square it goes to, create the
     # appropriate Move object and return it
 
-    from_square = utils.singleton_get(blind_board_diff.emptied)
+    from_square = utils.singleton_get(blind_board_diff.get_emptied())
     if _diff_is_take(blind_board_diff):
-        to_square = utils.singleton_get(blind_board_diff.changed)
+        to_square = utils.singleton_get(blind_board_diff.get_changed())
     else: # diff is simple move
-        to_square = utils.singleton_get(blind_board_diff.filled)
+        to_square = utils.singleton_get(blind_board_diff.get_filled())
 
     move = Move(from_square, to_square)
     utils.log.debug('read move {}'.format(move))

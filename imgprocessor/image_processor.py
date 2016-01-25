@@ -4,17 +4,20 @@ import operator
 import os
 import random
 
+import chess
+from chess import BLACK, WHITE
+
 import numpy as np
 import matplotlib.pyplot as plt
-from chess import COLORS
+
 from skimage.filters import threshold_otsu
 from sklearn.decomposition import PCA
 from skimage import feature, io, color, exposure
 from skimage.transform import hough_line, hough_line_peaks
 from sklearn.neighbors import KNeighborsClassifier
 
-from chessboard import Color
-from chessboard.board import BlindBoard, square_name
+from ..chessboard.board import BlindBoard
+
 
 """
 TODO (15/12/2015)
@@ -208,7 +211,7 @@ class ImageProcessor(object):
         self.color_classifier = KNeighborsClassifier()
         initial_squares = self.cut_squares(self.initial_image, self._edges)
         training_data = np.zeros((32, 3))  # 32 pieces (16 black, 16 white), 3 color channels
-        training_labels = [Color.BLACK.value for _ in range(16)] + [Color.WHITE.value for _ in range(16)]
+        training_labels = [BLACK for _ in range(16)] + [WHITE for _ in range(16)]
         pieces_indices = [(i, j) for i in [0, 1, 6, 7] for j in range(8)]
 
         binary_diff_squares = self.cut_squares(self.compute_binary_diff_image(self.initial_image), self._edges)
@@ -228,7 +231,7 @@ class ImageProcessor(object):
         pca = PCA(n_components=2)
         X_r = pca.fit_transform(X)
         plt.clf()
-        colors = ["brown" if k == Color.BLACK.value else "beige" for k in labels]
+        colors = ["brown" if k == BLACK.value else "beige" for k in labels]
         plt.scatter(X_r[:, 0], X_r[:, 1], color=colors, edgecolors="black")
         plt.savefig(os.path.join(basedir, "colors_pca.png"))
 
@@ -347,14 +350,10 @@ class ImageProcessor(object):
         if self._blindboard_matrix is None:
             raise ImageProcessorException("The `.process` method has not been called on this object yet")
         occupied_squares = {}
-        for i in range(self._blindboard_matrix.shape[0]):
-            for j in range(self._blindboard_matrix.shape[1]):
-                value = self._blindboard_matrix[i,j]
-                if value == COLORS.BLACK:
-                    occupied_squares[square_name(j,7-i)] = COLORS.BLACK
-                elif value == COLORS.WHITE:
-                    occupied_squares[square_name(j,7-i)] = COLORS.WHITE
-        return BlindBoard(occupied_squares)
+        for (i,j), entry in np.ndenumerate(self._blindboard_matrix):
+            file = j ; rank = 8-i
+            occupied_squares[chess.square(file, rank)] = entry
+        return BlindBoard.from_dict(occupied_squares)
 
 
 if __name__ == "__main__":
