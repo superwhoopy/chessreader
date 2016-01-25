@@ -9,7 +9,7 @@ pieces are only distinguished by their color.
 
 from string import ascii_lowercase, ascii_uppercase
 from chess import (BaseBoard, Piece, STARTING_BOARD_FEN, BLACK,
-                   WHITE, PAWN, SQUARE_NAMES)
+                   WHITE, PAWN, SQUARE_NAMES, BB_H8)
 
 
 
@@ -168,14 +168,14 @@ class BlindBoard(BaseBoard):
         def get_squares_from_mask(n):
             '''
             Takes as input an integer `n` and returns the indices of the
-            set bits in its binary representation, as a set
+            set bits in its binary representation on 64 bits, as a set
             '''
             pieces = set()
-            bits = bin(n)[2:]
-            bits = bits[::-1]
-            for i,bit in enumerate(bits):
-                if bit == "1":
+            k = 1 ; i = 0
+            while k <= (1 << BB_H8):
+                if k & n:
                     pieces.add(i)
+                k <<= 1 ; i += 1
             return pieces
 
 
@@ -186,3 +186,4 @@ EMPTY_BLINDBOARD = BlindBoard()
 
 START_BLINDBOARD = BlindBoard(fen=STARTING_BOARD_FEN)
 '''Board with pieces in starting position'''
+
