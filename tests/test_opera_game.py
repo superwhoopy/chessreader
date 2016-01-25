@@ -1,3 +1,5 @@
+import os
+
 import nose.tools
 
 from .. import core
@@ -8,7 +10,7 @@ def test_opera():
     '''Test deduction of all moves from the Opera Game'''
     # start by building all the blind boards of the Game
 
-    opera_game = 'games/opera.pgn'
+    opera_game = os.path.join(os.path.split(__file__)[0], 'games/opera.pgn')
     # read the boards from the PGN and turn them into BlindBoards
     blind_boards = list(read_boards_from_pgn(opera_game, use_blindboards=True))
 
