@@ -171,11 +171,11 @@ class BlindBoard(BaseBoard):
             set bits in its binary representation, as a set
             '''
             pieces = set()
-            bits = bin(n)[2:]
-            bits = bits[::-1]
-            for i,bit in enumerate(bits):
-                if bit == "1":
+            k = 1 ; i = 0
+            while k <= (1 << 63):
+                if k & n:
                     pieces.add(i)
+                k <<= 1 ; i += 1
             return pieces
 
 
@@ -186,3 +186,4 @@ EMPTY_BLINDBOARD = BlindBoard()
 
 START_BLINDBOARD = BlindBoard(fen=STARTING_BOARD_FEN)
 '''Board with pieces in starting position'''
+
