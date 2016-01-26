@@ -1,7 +1,5 @@
 from .. import utils
-from ..chess import Color
-from ..chess.moves import Move
-
+from chess import BLACK, WHITE, Move
 import pexpect
 
 class GnuChess:
@@ -99,8 +97,7 @@ class GnuChess:
 
             from_square = match.group('from_square').decode()
             to_square   = match.group('to_square').decode()
-            color       = Color.BLACK if match.group('black_move') else \
-                          Color.WHITE
+            color       = BLACK if match.group('black_move') else WHITE
             move_count  = int(match.group('move_count'))
 
             utils.log.debug(
