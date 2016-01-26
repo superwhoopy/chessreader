@@ -1,4 +1,3 @@
-import copy
 
 import chess.pgn
 from chess import Board, Piece, BLACK, WHITE, PAWN

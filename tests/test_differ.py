@@ -4,13 +4,13 @@ import chess
 from chess import Move, BLACK, WHITE
 
 from .. import core
-from ..chessboard.board import START_BLINDBOARD, BlindBoard
+from ..chessboard.board import BlindBoard
 
 class TestDiffer:
 
     def setUp(self):
 
-        self.bb_start = START_BLINDBOARD
+        self.bb_start = BlindBoard.get_starting_board()
 
     def test_simple_move_diff(self):
         '''Test simple move deduction'''

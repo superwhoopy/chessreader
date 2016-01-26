@@ -117,27 +117,25 @@ class BlindBoard(BaseBoard):
         '''
         return board_to.diff(board_from)
 
+    @staticmethod
+    def get_starting_board():
+        return BlindBoard(fen=STARTING_BOARD_FEN)
+
     ########################################
 
 
     class Diff:
         '''Diff between two BlindBoard'''
 
-        emptied = BB_VOID
-        '''Binary mask representing the set of squares that were emptied'''
-
-        filled  = BB_VOID
-        '''Binary mask representing the set of squares that were filled'''
-
-        changed = BB_VOID
-        '''Binary mask representing the set of squares that were occuppied
-        and still are, but whose piece color has changed'''
-
         def __init__(self, emptied, filled, changed):
-
-            self.emptied = emptied
-            self.filled = filled
-            self.changed = changed
+            '''
+            `emptied`, `filled` and `changed` are 64-bit bitsets, represented as
+            integers, describing respectively the set of squares that were emptied,
+            filled, or whose color has changed between two blindboards.
+            '''
+            self.emptied = emptied or BB_VOID
+            self.filled = filled or BB_VOID
+            self.changed = changed or BB_VOID
 
         def __eq__(self, other):
             return all(getattr(self, attr) == getattr(other, attr) for attr in ('emptied', 'filled', 'changed'))
@@ -178,12 +176,4 @@ class BlindBoard(BaseBoard):
                 k <<= 1 ; i += 1
             return pieces
 
-
-
-
-EMPTY_BLINDBOARD = BlindBoard()
-'''Empty board representation'''
-
-START_BLINDBOARD = BlindBoard(fen=STARTING_BOARD_FEN)
-'''Board with pieces in starting position'''
 
