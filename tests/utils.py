@@ -16,22 +16,22 @@ def read_boards_from_pgn(pgn_path, use_blindboards=False):
         else:
             return board
 
-    pgn_file = open(pgn_path, 'r')
-    node = chess.pgn.read_game(pgn_file)
-    while node.variations:
+    with open(pgn_path, 'r') as pgn_file:
+        node = chess.pgn.read_game(pgn_file)
+        while node.variations:
+            yield _convert(node.board())
+            node = node.variation(0)
         yield _convert(node.board())
-        node = node.variation(0)
-    yield _convert(node.board())
-    pgn_file.close()
+
 
 def read_moves_from_pgn(pgn_path):
-    pgn_file = open(pgn_path, 'r')
-    node = chess.pgn.read_game(pgn_file)
-    while node.variations:
-        next_node = node.variation(0)
-        yield next_node.move
-        node = next_node
-    pgn_file.close()
+    with open(pgn_path, 'r') as pgn_file:
+        node = chess.pgn.read_game(pgn_file)
+        while node.variations:
+            next_node = node.variation(0)
+            yield next_node.move
+            node = next_node
+
 
 def board_to_blindboard(board):
     '''
