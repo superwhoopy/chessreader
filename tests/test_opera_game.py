@@ -1,22 +1,27 @@
+import os
 
-from .. import core, engine
-from . import utils
-from .fen_games.opera import GAME
+import nose.tools
+
+from .. import core
+from .utils import read_boards_from_pgn, read_moves_from_pgn
+
 
 def test_opera():
+    '''Test deduction of all moves from the Opera Game'''
     # start by building all the blind boards of the Game
-    blind_boards = utils.read_FEN_game(GAME)
 
-    # build the list of moves
-    moves = [ core.diffreader.read(to_position.diff(from_position))
-                for from_position, to_position in zip(blind_boards[0:-1],
-                                                      blind_boards[1:]) ]
+    opera_game = os.path.join(os.path.split(__file__)[0], 'games/opera.pgn')
+    # read the boards from the PGN and turn them into BlindBoards
+    blind_boards = list(read_boards_from_pgn(opera_game, use_blindboards=True))
 
-    # call gnuchess and play the game! everything should go fine...
-    my_engine = engine.GnuChess()
-    for move in moves:
-        my_engine.play_move(move)
+    # deduce the list of moves from the BlindBoards
+    deduced_moves = [ core.diffreader.read(to_position.diff(from_position))
+                      for from_position, to_position in zip(blind_boards[0:-1],
+                                                      blind_boards[1:])
+    ]
 
-    # save the game and quit
-    my_engine.writeline("pgnsave opera_game.pgn")
-    my_engine.kill()
+    # read the list of actual moves from the PGN and compare it to the deduced moves
+    moves = list(read_moves_from_pgn(opera_game))
+    nose.tools.eq_(moves, deduced_moves)
+
+    # TODO play the game with gnuchess?
