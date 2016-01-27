@@ -51,6 +51,13 @@ def test_BlindBoard_identical():
     nose.tools.ok_(not diff.filled)
     nose.tools.ok_(not diff.changed)
 
+def test_BlindBoard_changes():
+    '''Test BlindBoard editing methods'''
+    board = BlindBoard.from_dict({chess.A1: WHITE, chess.B2: WHITE})
+    board.move_piece(chess.A1, chess.D5)
+    board.change_color_at(chess.B2)
+    nose.tools.eq_(board, BlindBoard.from_dict({chess.D5: WHITE,
+                                                chess.B2: BLACK}))
 
 def tearDown():
     pass

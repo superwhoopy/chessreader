@@ -9,9 +9,12 @@ from .utils import natural_sort
 from ..imgprocessor import ImageProcessor
 
 
-def compare_blindboards(expected, actual):
+def compare_blindboards(expected, actual, file_name=None):
     if not expected == actual:
-        print("BlindBoards are different: expected")
+        info = ""
+        if file_name:
+            info = "for `%s`" % os.path.basename(file_name)
+        print("BlindBoards are different %s: expected" % info)
         print(expected)
         print("But found instead:")
         print(actual)
@@ -78,4 +81,4 @@ def test_imgage_processor():
     for img, expected_board in zip(images[2:], expected_boards()):
         processor.process(img)
         board = processor.get_blindboard()
-        compare_blindboards(expected_board, board)
+        compare_blindboards(expected_board, board, img)

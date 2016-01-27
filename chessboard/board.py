@@ -64,9 +64,11 @@ class BlindBoard(BaseBoard):
 
     def __eq__(self, other):
         '''
-        Two blindboards are identical if the positions of their black and white pieces are the same
+        Two blindboards are identical if the positions of their black and white
+        pieces are the same
         '''
-        return all(self.occupied_co[color] == other.occupied_co[color] for color in (BLACK, WHITE))
+        return all(self.occupied_co[color] == other.occupied_co[color]
+                   for color in (BLACK, WHITE))
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -93,7 +95,7 @@ class BlindBoard(BaseBoard):
         if piece in chess.COLORS:
             piece = Piece(PAWN, piece)
         elif not isinstance(piece, Piece):
-            raise ValueError("`%s` must be either a `bool` or a Piece object"
+            raise ValueError("`%s` is neither a `bool` nor a Piece object"
                              % str(piece))
         return BaseBoard.set_piece_at(self, square, piece)
 
@@ -101,13 +103,13 @@ class BlindBoard(BaseBoard):
         bb_from_square = 1 << from_square
         if not (self.occupied & bb_from_square):
             raise ValueError("Starting square %d is empty" % from_square)
-        color = self.occupied_co[WHITE] & bb_from_square
+        color = self.occupied_co[WHITE] & bb_from_square > 0
         self.remove_piece_at(from_square)
         self.set_piece_at(to_square, color)
 
     def change_color_at(self, square):
         bb_square = 1 << square
-        color = self.occupied_co[WHITE] & bb_square  # because WHITE == True
+        color = self.occupied_co[WHITE] & bb_square > 0  # because WHITE == True
         self.occupied_co[color] &= (bb_square ^ BB_ALL)
         self.occupied_co[not color] |= bb_square
 
