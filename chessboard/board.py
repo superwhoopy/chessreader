@@ -87,15 +87,19 @@ class BlindBoard(BaseBoard):
     def set_piece_at(self, square, piece):
         '''
         In `BaseBoard`, this method expects a square and a Piece object.
-        But for BlindBoards, we only need the second argument to be a color (we don't need the piece type).
+        But for BlindBoards, we only need the second argument to be a color
+        (we don't need the piece type).
         '''
         if piece in chess.COLORS:
             piece = Piece(PAWN, piece)
+        elif not isinstance(piece, Piece):
+            raise ValueError("`%s` must be either a `bool` or a Piece object"
+                             % str(piece))
         return BaseBoard.set_piece_at(self, square, piece)
 
     def move_piece(self, from_square, to_square):
         bb_from_square = 1 << from_square
-        if not self.occupied & (1 << bb_from_square):
+        if not (self.occupied & bb_from_square):
             raise ValueError("Starting square %d is empty" % from_square)
         color = self.occupied_co[WHITE] & bb_from_square
         self.remove_piece_at(from_square)
@@ -103,16 +107,16 @@ class BlindBoard(BaseBoard):
 
     def change_color_at(self, square):
         bb_square = 1 << square
-        color = self.occupied_co[WHITE] & bb_square  # remember that WHITE == True
+        color = self.occupied_co[WHITE] & bb_square  # because WHITE == True
         self.occupied_co[color] &= (bb_square ^ BB_ALL)
         self.occupied_co[not color] |= bb_square
 
-
     def diff(self, board_from):
         '''
-        The object inherits from `BaseBoard` an `occupied` attribute which corresponds to
-        a binary mask (encoded as an integer) indicating which cases are occupied on
-        the board. We compute `emptied`, `filled` and `changed` as binary masks as well.
+        The object inherits from `BaseBoard` an `occupied` attribute which
+        corresponds to a binary mask (encoded as an integer) indicating which
+        cases are occupied on the board. We compute `emptied`, `filled` and
+        `changed` as binary masks as well.
         '''
         emptied = ~self.occupied & board_from.occupied
         filled = self.occupied & ~board_from.occupied
@@ -167,7 +171,8 @@ class BlindBoard(BaseBoard):
             self.changed = changed or BB_VOID
 
         def __eq__(self, other):
-            return all(getattr(self, attr) == getattr(other, attr) for attr in ('emptied', 'filled', 'changed'))
+            return all(getattr(self, attr) == getattr(other, attr)
+                       for attr in ('emptied', 'filled', 'changed'))
 
         def __str__(self):
             return "emptied:{} filled:{} changed:{}".format(*(
@@ -180,7 +185,8 @@ class BlindBoard(BaseBoard):
             Returns: the size of the three sets `emptied`, `filled` and
                `changed`
             '''
-            return tuple(bin(n).count('1') for n in (self.emptied, self.filled, self.changed))
+            return tuple(bin(n).count('1') for n in (self.emptied, self.filled,
+                                                     self.changed))
 
         def get_emptied(self):
             return self.get_squares_from_mask(self.emptied)
