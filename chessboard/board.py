@@ -8,8 +8,10 @@ pieces are only distinguished by their color.
 '''
 
 from string import ascii_lowercase, ascii_uppercase
+
+import chess
 from chess import (BaseBoard, Piece, STARTING_BOARD_FEN, BLACK,
-                   WHITE, PAWN, SQUARE_NAMES, BB_H8, BB_VOID)
+                   WHITE, PAWN, SQUARE_NAMES, BB_H8, BB_VOID, BB_ALL)
 
 
 
@@ -66,6 +68,9 @@ class BlindBoard(BaseBoard):
         '''
         return all(self.occupied_co[color] == other.occupied_co[color] for color in (BLACK, WHITE))
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __str__(self):
         board_str = BaseBoard.__str__(self)
         new_chars = []
@@ -78,6 +83,30 @@ class BlindBoard(BaseBoard):
             new_chars.append(new_char)
 
         return ''.join(new_chars)
+
+    def set_piece_at(self, square, piece):
+        '''
+        In `BaseBoard`, this method expects a square and a Piece object.
+        But for BlindBoards, we only need the second argument to be a color (we don't need the piece type).
+        '''
+        if piece in chess.COLORS:
+            piece = Piece(PAWN, piece)
+        return BaseBoard.set_piece_at(self, square, piece)
+
+    def move_piece(self, from_square, to_square):
+        bb_from_square = 1 << from_square
+        if not self.occupied & (1 << bb_from_square):
+            raise ValueError("Starting square %d is empty" % from_square)
+        color = self.occupied_co[WHITE] & bb_from_square
+        self.remove_piece_at(from_square)
+        self.set_piece_at(to_square, color)
+
+    def change_color_at(self, square):
+        bb_square = 1 << square
+        color = self.occupied_co[WHITE] & bb_square  # remember that WHITE == True
+        self.occupied_co[color] &= (bb_square ^ BB_ALL)
+        self.occupied_co[not color] |= bb_square
+
 
     def diff(self, board_from):
         '''

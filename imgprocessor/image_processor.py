@@ -203,7 +203,7 @@ class ImageProcessor(object):
         for which we know the position of the pieces. We isolate an image of each of the 32
         pieces, and we represent each of them by an RGB tuple corresponding to the average
         color within a small disk centered on the middle of each square image.
-        We then train the classifier using these data and the pieces labels.
+        We then train the classifier using these data as features and the pieces' labels.
 
         In verbose mode, a PCA plot of the training data is saved in `temp_images`.
         """
@@ -231,7 +231,7 @@ class ImageProcessor(object):
         pca = PCA(n_components=2)
         X_r = pca.fit_transform(X)
         plt.clf()
-        colors = ["brown" if k == BLACK.value else "beige" for k in labels]
+        colors = ["brown" if k == BLACK else "beige" for k in labels]
         plt.scatter(X_r[:, 0], X_r[:, 1], color=colors, edgecolors="black")
         plt.savefig(os.path.join(basedir, "colors_pca.png"))
 
@@ -342,7 +342,8 @@ class ImageProcessor(object):
         predictions = self.color_classifier.predict(square_colors)
         if self.verbose:
             self.save_pca_plot(square_colors, predictions, self.temp_image_dir)
-        estimates = np.zeros((64,))
+        estimates = np.empty((64,), dtype=object)
+        estimates.fill(None)  # `None` means that the square is empty, and `True`/`False` mean black or white
         estimates[occupied_squares] = predictions
         return np.reshape(estimates, (8, 8))
 
@@ -351,8 +352,9 @@ class ImageProcessor(object):
             raise ImageProcessorException("The `.process` method has not been called on this object yet")
         occupied_squares = {}
         for (i,j), entry in np.ndenumerate(self._blindboard_matrix):
-            file = j ; rank = 8-i
-            occupied_squares[chess.square(file, rank)] = entry
+            file = j ; rank = 7-i
+            if entry is not None:
+                occupied_squares[chess.square(file, rank)] = bool(entry)
         return BlindBoard.from_dict(occupied_squares)
 
 
