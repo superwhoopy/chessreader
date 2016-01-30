@@ -2,7 +2,6 @@
 import math
 import operator
 import os
-import random
 
 import chess
 from chess import BLACK, WHITE
@@ -16,12 +15,24 @@ from skimage import feature, io, color, exposure
 from skimage.transform import hough_line, hough_line_peaks
 from sklearn.neighbors import KNeighborsClassifier
 
-from ..chessboard.board import BlindBoard
+from chessboard.board import BlindBoard
 
+from skimage.color.adapt_rgb import adapt_rgb, each_channel
 
 """
-TODO (15/12/2015)
-* write proper testing on a set of images
+TODO (30/01/2016)
+* if the gamma correction is too low on the absolute diff image,
+    we may fail to detect some pieces.
+* we might try to improve the difference between black and white pieces
+
+Currently, for classification, we encode the colors in lab space and use the
+deltaE_cie76 color distance which is supposed to be a more accurate reflection
+of `color differences` as percieved by the human eye (as opposed to RGB
+euclidian distance which fails to capture the `non-linearity` of human color
+perception).
+http://scikit-image.org/docs/dev/api/skimage.color.html#skimage.color.deltaE_cie76
+
+
 """
 
 
@@ -95,6 +106,7 @@ class ImageProcessor(object):
         self._blindboard_matrix = None
         self.verbose = verbose
         self.color_classifier = None
+        self.diff_image = None
 
         if verbose:
             if not os.path.isdir(self.TEMP_DIR):
@@ -208,8 +220,8 @@ class ImageProcessor(object):
         In verbose mode, a PCA plot of the training data is saved in `temp_images`.
         """
 
-        self.color_classifier = KNeighborsClassifier()
-        initial_squares = self.cut_squares(self.initial_image, self._edges)
+        self.color_classifier = KNeighborsClassifier(metric=color.deltaE_ciede94)
+        initial_squares = self.cut_squares(color.rgb2lab(self.initial_image), self._edges)
         training_data = np.zeros((32, 3))  # 32 pieces (16 black, 16 white), 3 color channels
         training_labels = [BLACK for _ in range(16)] + [WHITE for _ in range(16)]
         pieces_indices = [(i, j) for i in [0, 1, 6, 7] for j in range(8)]
@@ -292,10 +304,13 @@ class ImageProcessor(object):
         occupancy_matrix = np.empty((8, 8), dtype=bool)
         occupancy_matrix.fill(False)
 
-        binary_diff_squares = self.cut_squares(self.compute_binary_diff_image(self.image), self._edges)
+        binary_diff_image = self.compute_binary_diff_image(self.image)
+        binary_diff_squares = self.cut_squares(binary_diff_image, self._edges)
 
         if self.verbose:
-            self.plot_square_images(binary_diff_squares, os.path.join(self.temp_image_dir, "diff_bw_squares.png"))
+            self.plot_square_images(binary_diff_squares,
+                                    os.path.join(self.temp_image_dir,
+                                    "diff_bw_squares.png"))
 
         self._processed_square_images = np.empty((8, 8), dtype=np.ndarray)
 
@@ -311,30 +326,31 @@ class ImageProcessor(object):
 
     def compute_binary_diff_image(self, new_image):
         # compute difference between starting and current image
+        # the gamma parameters have a very strong impact on the classification
         adj_start_image = exposure.adjust_gamma(color.rgb2gray(self.empty_chessboard_image), 0.1)
         adj_image = exposure.adjust_gamma(color.rgb2gray(new_image), 0.1)
-        diff_image = exposure.adjust_gamma(np.abs(adj_image - adj_start_image), 0.5)
+        diff_image = exposure.adjust_gamma(np.abs(adj_image - adj_start_image), 0.3)
+        self.diff_image = diff_image
         return diff_image > threshold_otsu(diff_image)
 
     @staticmethod
     def get_representative_color(img, mask_2d):
         return np.mean(img[mask_2d], axis=0)
 
-    @staticmethod
-    def apply_to_matrix(f, M, odim):  # TODO remove this method
-        output = np.empty(M.shape + (odim,))
-        for i in range(M.shape[0]):
-            for j in range(M.shape[1]):
-                output[i, j] = f(M[i, j])
-        return output
-
     def compute_blindboard_matrix(self):
-        square_images = self.cut_squares(self.image, self._edges)
+
+        square_images = self.cut_squares(color.rgb2lab(self.image), self._edges)
         square_colors = np.zeros((64, 3))
+        # square_color_images = np.zeros((8,8,20,20,3), dtype=np.uint8)
         for k, ((i,j), square_image) in enumerate(np.ndenumerate(square_images)):
             if self._occupancy_matrix[i,j]:
                 piece_mask = self._processed_square_images[i,j]
                 square_colors[k,] = np.mean(square_image[piece_mask], axis=0)
+                # square_color_images[i,j,:,:,] = square_colors[k,]
+
+        # if self.verbose:
+        #     self.plot_square_images(square_color_images,
+        #             os.path.join(self.temp_image_dir, "square_colors.png"))
 
         occupied_squares = np.reshape(self._occupancy_matrix, (64,))
         square_colors = square_colors[occupied_squares]
@@ -342,8 +358,10 @@ class ImageProcessor(object):
         predictions = self.color_classifier.predict(square_colors)
         if self.verbose:
             self.save_pca_plot(square_colors, predictions, self.temp_image_dir)
+
         estimates = np.empty((64,), dtype=object)
-        estimates.fill(None)  # `None` means that the square is empty, and `True`/`False` mean black or white
+        # `None` == empty square, `True` = white piece, `False` = black piece
+        estimates.fill(None)
         estimates[occupied_squares] = predictions
         return np.reshape(estimates, (8, 8))
 
@@ -360,14 +378,23 @@ class ImageProcessor(object):
 
 if __name__ == "__main__":
 
-    IMAGES_FOLDER = '/Users/daniel/Desktop/chessboard/chessboard-pictures-other'
-    base_img = os.path.join(IMAGES_FOLDER, 'Picture 13.jpg')
-    start_img = os.path.join(IMAGES_FOLDER, 'Picture 14.jpg')
-    test_files = [os.path.join(IMAGES_FOLDER, f) for f in os.listdir(IMAGES_FOLDER)
-                  if f.endswith(".jpg") and f not in {'Picture 13.jpg', 'Picture 14.jpg'}]
-    test_image = random.choice(test_files)
+    # FOR DEBUGGING PURPOSES
 
-    processor = ImageProcessor(base_img, start_img, verbose=True)
-    processor.process(test_image)
-    blindboard = processor.get_blindboard()
-    print(blindboard.occupied_squares)
+    @adapt_rgb(each_channel)
+    def rgb_rescale_intensity(img):
+        p2, p98 = np.percentile(img, (10, 90))
+        return exposure.rescale_intensity(img, in_range=(p2, p98))
+
+    def plot(img):
+        plt.imshow(img, cmap=plt.cm.gray)
+
+    os.chdir(os.path.split(__file__)[0])
+    print("TEST")
+
+    pcr = ImageProcessor("../tests/pictures/board-0.jpg",
+                         "../tests/pictures/board-1.jpg", verbose=False)
+    pcr.process('../tests/pictures/board-13.jpg')
+    print(pcr.get_blindboard())
+
+
+

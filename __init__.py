@@ -4,7 +4,7 @@ import argparse
 import sys
 import colorama
 
-from . import tests, utils, shell
+from . import tests, utils, shell, imgprocessor
 
 ################################################################################
 

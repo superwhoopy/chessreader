@@ -21,13 +21,13 @@ def compare_blindboards(expected, actual, file_name=None):
         raise AssertionError("BlindBoards are different")
     return
 
-
+# TODO store the game as a PGN instead ?
 def expected_boards():
     '''This generator returns all the BlindBoards corresponding to the
     images inside ./pictures (starting with board-2.jpg)'''
     b = BlindBoard.get_starting_board()
     b.move_piece(chess.E2, chess.E4)
-    yield b  # corresponds to board-2.jpg
+    yield b  # board-2.jpg
     b.move_piece(chess.E7, chess.E5)
     yield b
     b.move_piece(chess.G1, chess.F3)
@@ -59,7 +59,7 @@ def expected_boards():
     b.remove_piece_at(chess.B7)
     b.change_color_at(chess.C6)
     yield b
-    b.remove_piece_at(chess.B5)
+    b.move_piece(chess.B5, chess.D3)
     yield b
 
 def test_imgage_processor():
@@ -76,9 +76,11 @@ def test_imgage_processor():
               if image_regex.match(f)]
     images = natural_sort(images)  # board-0.jpg, board-1.jpg, ...
 
+    print("\n  * Calibrating image processor...")
     processor = ImageProcessor(images[0], images[1])
 
     for img, expected_board in zip(images[2:], expected_boards()):
+        print("  * Processing `%s`..." % os.path.basename(img))
         processor.process(img)
         board = processor.get_blindboard()
         compare_blindboards(expected_board, board, img)
