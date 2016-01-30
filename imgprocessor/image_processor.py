@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from skimage.filters import threshold_otsu
 from sklearn.decomposition import PCA
-from skimage import feature, io, color, exposure
+from skimage import feature, io, color, exposure, transform
 from skimage.transform import hough_line, hough_line_peaks
 from sklearn.neighbors import KNeighborsClassifier
 
@@ -94,8 +94,8 @@ class ImageProcessor(object):
                 will be saved in the current directory inside the `temp_images` folder.
         """
 
-        self.empty_chessboard_image = io.imread(empty_chessboard_image_path)
-        self.initial_image = io.imread(start_image_path)
+        self.empty_chessboard_image = self.resize_image(io.imread(empty_chessboard_image_path))
+        self.initial_image = self.resize_image(io.imread(start_image_path))
         self.image = None
         self.temp_image_dir = None
         self._hough_lines = None
@@ -138,7 +138,7 @@ class ImageProcessor(object):
                 os.makedirs(self.temp_image_dir)
             print("Processing `{0}`...".format(os.path.basename(image_path)))
 
-        self.image = io.imread(image_path)
+        self.image = self.resize_image(io.imread(image_path))
 
         if self.verbose:
             self.save_image("image.png", self.image)
@@ -314,16 +314,25 @@ class ImageProcessor(object):
 
         square_images = self.cut_squares(color.rgb2lab(self.image), self._edges)
         square_colors = np.zeros((64, 3))
-        # square_color_images = np.zeros((8,8,20,20,3), dtype=np.uint8)
+
+        if self.verbose:
+            # an 8x8 matrix which will store the representative color of each
+            # square (as 20x20 pixels images)
+            square_color_images = np.zeros((8,8,20,20,3), dtype=np.uint8)
+
         for k, ((i,j), square_image) in enumerate(np.ndenumerate(square_images)):
             if self._occupancy_matrix[i,j]:
                 piece_mask = self._processed_square_images[i,j]
-                square_colors[k,] = np.mean(square_image[piece_mask], axis=0)
-                # square_color_images[i,j,:,:,] = square_colors[k,]
+                square_colors[k,] = np.percentile(square_image[piece_mask], 60, axis=0)
+                if self.verbose:
+                    rgb_col = color.lab2rgb(np.array(square_colors[k,], ndmin=3))[0,0] * 255.
+                    square_color_images[i,j,:,:,] = np.array(rgb_col, dtype=np.uint8)
+            elif self.verbose:
+                square_color_images[i,j,:,:,] = np.array([0,0,255], dtype=np.uint8)
 
-        # if self.verbose:
-        #     self.plot_square_images(square_color_images,
-        #             os.path.join(self.temp_image_dir, "square_colors.png"))
+        if self.verbose:
+            self.plot_square_images(square_color_images,
+                    os.path.join(self.temp_image_dir, "square_colors.png"))
 
         occupied_squares = np.reshape(self._occupancy_matrix, (64,))
         square_colors = square_colors[occupied_squares]
@@ -337,6 +346,13 @@ class ImageProcessor(object):
         estimates.fill(None)
         estimates[occupied_squares] = predictions
         return np.reshape(estimates, (8, 8))
+
+    @staticmethod
+    def resize_image(img, width=500):
+        '''resize an image to have a given width, preserving the h/w ratio'''
+        x2 = width
+        x1,y1 = img.shape[:2]
+        return transform.resize(img, (x2, y1*x2/x1))
 
     def get_blindboard(self):
         """
@@ -410,7 +426,7 @@ if __name__ == "__main__":
 
     pcr = ImageProcessor("../tests/pictures/board-0.jpg",
                          "../tests/pictures/board-1.jpg", verbose=True)
-    pcr.process('../tests/pictures/board-13.jpg')
+    pcr.process('../tests/pictures/board-3.jpg')
     print(pcr.get_blindboard())
 
 
