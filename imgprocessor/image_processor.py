@@ -166,6 +166,8 @@ class ImageProcessor(object):
 
     @staticmethod
     def compute_canny_image(image):
+        '''apply a canny filter to each channel of an RGB image and combine
+        the results using a logical OR'''
         image_gray = exposure.equalize_hist(color.rgb2gray(image))
         image_canny = np.zeros_like(image_gray)
         for i in range(3):
@@ -174,6 +176,16 @@ class ImageProcessor(object):
         return image_canny
 
     def find_edges(self, image):
+        """
+        Takes as input an RGB chessboard image and computes the Hough lines
+        and intersections between them corresponding to the edges of the 64
+        squares. The function returns a tuple whose first elsment is a
+        numpy array with shape (N,2) where N is the number of
+        intersections between the Hough lines. The second element is a list
+        of tuples (intensity, abs(theta), abs(r)) describing the significant
+        Hough lines (in polar coordinates).
+        """
+
         image_canny = self.compute_canny_image(image)
         h, theta, d = hough_line(image_canny)
         min_distance = int(math.floor(image.shape[1] / 11))  # TODO better way?
@@ -239,15 +251,6 @@ class ImageProcessor(object):
         self.color_classifier.fit(training_data, training_labels)
 
     @staticmethod
-    def save_pca_plot(X, labels, basedir):
-        pca = PCA(n_components=2)
-        X_r = pca.fit_transform(X)
-        plt.clf()
-        colors = ["brown" if k == BLACK else "beige" for k in labels]
-        plt.scatter(X_r[:, 0], X_r[:, 1], color=colors, edgecolors="black")
-        plt.savefig(os.path.join(basedir, "colors_pca.png"))
-
-    @staticmethod
     def cut_squares(input_image, edges):
         """
         Takes as input a chessboard image and uses the estimated square edges `self._edges` to
@@ -268,6 +271,96 @@ class ImageProcessor(object):
                                math.floor(top_left[0]):math.ceil(bottom_right[0])]
                 images_matrix[i, j] = square_image
         return images_matrix
+
+    def compute_occupancy_matrix(self):
+
+        occupancy_matrix = np.empty((8, 8), dtype=bool)
+        occupancy_matrix.fill(False)
+
+        binary_diff_image = self.compute_binary_diff_image(self.image)
+        binary_diff_squares = self.cut_squares(binary_diff_image, self._edges)
+
+        if self.verbose:
+            self.plot_square_images(binary_diff_squares,
+                                    os.path.join(self.temp_image_dir,
+                                    "diff_bw_squares.png"))
+
+        self._processed_square_images = np.empty((8, 8), dtype=np.ndarray)
+
+        for i in range(binary_diff_squares.shape[0]):
+            for j in range(binary_diff_squares.shape[1]):
+                square = binary_diff_squares[i, j]
+                n_pixels = square.shape[0] * square.shape[1]
+                # TODO improve this rule ?
+                occupancy_matrix[i, j] = np.sum(square) / n_pixels > self.OCCUPANCY_THRESHOLD
+                self._processed_square_images[i, j] = square
+
+        return occupancy_matrix
+
+    def compute_binary_diff_image(self, new_image):
+        """
+        Compute an Otsu-thresholded image corresponding to the
+        absolute difference between the empty chessboard image and the
+        current image.
+        """
+        adj_start_image = exposure.adjust_gamma(color.rgb2gray(self.empty_chessboard_image), 0.1)
+        # gamma values have a strong impact on classification
+        adj_image = exposure.adjust_gamma(color.rgb2gray(new_image), 0.1)
+        diff_image = exposure.adjust_gamma(np.abs(adj_image - adj_start_image), 0.3)
+        self.diff_image = diff_image
+        return diff_image > threshold_otsu(diff_image)
+
+    def compute_blindboard_matrix(self):
+
+        square_images = self.cut_squares(color.rgb2lab(self.image), self._edges)
+        square_colors = np.zeros((64, 3))
+        # square_color_images = np.zeros((8,8,20,20,3), dtype=np.uint8)
+        for k, ((i,j), square_image) in enumerate(np.ndenumerate(square_images)):
+            if self._occupancy_matrix[i,j]:
+                piece_mask = self._processed_square_images[i,j]
+                square_colors[k,] = np.mean(square_image[piece_mask], axis=0)
+                # square_color_images[i,j,:,:,] = square_colors[k,]
+
+        # if self.verbose:
+        #     self.plot_square_images(square_color_images,
+        #             os.path.join(self.temp_image_dir, "square_colors.png"))
+
+        occupied_squares = np.reshape(self._occupancy_matrix, (64,))
+        square_colors = square_colors[occupied_squares]
+
+        predictions = self.color_classifier.predict(square_colors)
+        if self.verbose:
+            self.save_pca_plot(square_colors, predictions, self.temp_image_dir)
+
+        estimates = np.empty((64,), dtype=object)
+        # `None` == empty square, `True` = white piece, `False` = black piece
+        estimates.fill(None)
+        estimates[occupied_squares] = predictions
+        return np.reshape(estimates, (8, 8))
+
+    def get_blindboard(self):
+        """
+        Converts the numpy array `_blindboard_matrix` into a BlindBoard object
+        """
+        if self._blindboard_matrix is None:
+            raise ImageProcessorException("The `.process` method has not been called on this object yet")
+        occupied_squares = {}
+        for (i,j), entry in np.ndenumerate(self._blindboard_matrix):
+            file = j ; rank = 7-i
+            if entry is not None:
+                occupied_squares[chess.square(file, rank)] = bool(entry)
+        return BlindBoard.from_dict(occupied_squares)
+
+    # ------------------------ PLOTTING METHODS ------------------------
+
+    @staticmethod
+    def save_pca_plot(X, labels, basedir):
+        pca = PCA(n_components=2)
+        X_r = pca.fit_transform(X)
+        plt.clf()
+        colors = ["brown" if k == BLACK else "beige" for k in labels]
+        plt.scatter(X_r[:, 0], X_r[:, 1], color=colors, edgecolors="black")
+        plt.savefig(os.path.join(basedir, "colors_pca.png"))
 
     def plot_chessboard_with_edges(self, chessboard_image):
         plt.imshow(chessboard_image, cmap=plt.cm.gray)
@@ -299,82 +392,6 @@ class ImageProcessor(object):
             path = self.temp_image_dir
         plt.imsave(os.path.join(path, name), image, cmap=plt.cm.gray)
 
-    def compute_occupancy_matrix(self):
-
-        occupancy_matrix = np.empty((8, 8), dtype=bool)
-        occupancy_matrix.fill(False)
-
-        binary_diff_image = self.compute_binary_diff_image(self.image)
-        binary_diff_squares = self.cut_squares(binary_diff_image, self._edges)
-
-        if self.verbose:
-            self.plot_square_images(binary_diff_squares,
-                                    os.path.join(self.temp_image_dir,
-                                    "diff_bw_squares.png"))
-
-        self._processed_square_images = np.empty((8, 8), dtype=np.ndarray)
-
-        for i in range(binary_diff_squares.shape[0]):
-            for j in range(binary_diff_squares.shape[1]):
-                square = binary_diff_squares[i, j]
-                n_pixels = square.shape[0] * square.shape[1]
-                # TODO improve this rule ?
-                occupancy_matrix[i, j] = np.sum(square) / n_pixels > self.OCCUPANCY_THRESHOLD
-                self._processed_square_images[i, j] = square
-
-        return occupancy_matrix
-
-    def compute_binary_diff_image(self, new_image):
-        # compute difference between starting and current image
-        # the gamma parameters have a very strong impact on the classification
-        adj_start_image = exposure.adjust_gamma(color.rgb2gray(self.empty_chessboard_image), 0.1)
-        adj_image = exposure.adjust_gamma(color.rgb2gray(new_image), 0.1)
-        diff_image = exposure.adjust_gamma(np.abs(adj_image - adj_start_image), 0.3)
-        self.diff_image = diff_image
-        return diff_image > threshold_otsu(diff_image)
-
-    @staticmethod
-    def get_representative_color(img, mask_2d):
-        return np.mean(img[mask_2d], axis=0)
-
-    def compute_blindboard_matrix(self):
-
-        square_images = self.cut_squares(color.rgb2lab(self.image), self._edges)
-        square_colors = np.zeros((64, 3))
-        # square_color_images = np.zeros((8,8,20,20,3), dtype=np.uint8)
-        for k, ((i,j), square_image) in enumerate(np.ndenumerate(square_images)):
-            if self._occupancy_matrix[i,j]:
-                piece_mask = self._processed_square_images[i,j]
-                square_colors[k,] = np.mean(square_image[piece_mask], axis=0)
-                # square_color_images[i,j,:,:,] = square_colors[k,]
-
-        # if self.verbose:
-        #     self.plot_square_images(square_color_images,
-        #             os.path.join(self.temp_image_dir, "square_colors.png"))
-
-        occupied_squares = np.reshape(self._occupancy_matrix, (64,))
-        square_colors = square_colors[occupied_squares]
-
-        predictions = self.color_classifier.predict(square_colors)
-        if self.verbose:
-            self.save_pca_plot(square_colors, predictions, self.temp_image_dir)
-
-        estimates = np.empty((64,), dtype=object)
-        # `None` == empty square, `True` = white piece, `False` = black piece
-        estimates.fill(None)
-        estimates[occupied_squares] = predictions
-        return np.reshape(estimates, (8, 8))
-
-    def get_blindboard(self):
-        if self._blindboard_matrix is None:
-            raise ImageProcessorException("The `.process` method has not been called on this object yet")
-        occupied_squares = {}
-        for (i,j), entry in np.ndenumerate(self._blindboard_matrix):
-            file = j ; rank = 7-i
-            if entry is not None:
-                occupied_squares[chess.square(file, rank)] = bool(entry)
-        return BlindBoard.from_dict(occupied_squares)
-
 
 if __name__ == "__main__":
 
@@ -392,7 +409,7 @@ if __name__ == "__main__":
     print("TEST")
 
     pcr = ImageProcessor("../tests/pictures/board-0.jpg",
-                         "../tests/pictures/board-1.jpg", verbose=False)
+                         "../tests/pictures/board-1.jpg", verbose=True)
     pcr.process('../tests/pictures/board-13.jpg')
     print(pcr.get_blindboard())
 
