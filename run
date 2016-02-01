@@ -2,4 +2,4 @@
 
 PYTHON=/usr/bin/python3
 
-${PYTHON} __init__.py ${*}
+${PYTHON} chessreader.py ${*}

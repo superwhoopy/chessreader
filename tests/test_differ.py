@@ -3,8 +3,8 @@ import nose.tools
 import chess
 from chess import Move, BLACK, WHITE
 
-from .. import core
-from ..chessboard.board import BlindBoard
+import core
+from chessboard.board import BlindBoard
 
 class TestDiffer:
 

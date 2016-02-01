@@ -11,7 +11,7 @@ from string import ascii_lowercase, ascii_uppercase
 
 import chess
 from chess import (BaseBoard, Piece, STARTING_BOARD_FEN, BLACK,
-                   WHITE, PAWN, SQUARE_NAMES, BB_H8, BB_VOID, BB_ALL)
+                   WHITE, PAWN, SQUARE_NAMES, BB_VOID, BB_ALL)
 
 
 
@@ -101,7 +101,7 @@ class BlindBoard(BaseBoard):
 
     def move_piece(self, from_square, to_square):
         bb_from_square = 1 << from_square
-        if not (self.occupied & bb_from_square):
+        if not self.occupied & bb_from_square:
             raise ValueError("Starting square %d is empty" % from_square)
         color = self.occupied_co[WHITE] & bb_from_square > 0
         self.remove_piece_at(from_square)
@@ -165,8 +165,8 @@ class BlindBoard(BaseBoard):
         def __init__(self, emptied, filled, changed):
             '''
             `emptied`, `filled` and `changed` are 64-bit bitsets, represented as
-            integers, describing respectively the set of squares that were emptied,
-            filled, or whose color has changed between two blindboards.
+            integers, describing respectively the set of squares that were
+            emptied, filled, or whose color has changed between two blindboards.
             '''
             self.emptied = emptied or BB_VOID
             self.filled = filled or BB_VOID
@@ -200,17 +200,10 @@ class BlindBoard(BaseBoard):
             return self.get_squares_from_mask(self.changed)
 
         @staticmethod
-        def get_squares_from_mask(n):
+        def get_squares_from_mask(mask):
             '''
             Takes as input an integer `n` and returns the indices of the
             set bits in its binary representation on 64 bits, as a set
             '''
-            pieces = set()
-            k = 1 ; i = 0
-            while k <= BB_H8:
-                if k & n:
-                    pieces.add(i)
-                k <<= 1 ; i += 1
-            return pieces
-
+            return set( i for i in chess.SQUARES if mask & (1<<i) )
 

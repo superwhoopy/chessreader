@@ -2,7 +2,7 @@ import os
 
 import nose.tools
 
-from .. import core
+import core.diffreader
 from .utils import read_boards_from_pgn, read_moves_from_pgn
 
 

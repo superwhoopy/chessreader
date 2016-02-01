@@ -3,7 +3,7 @@ import re
 import chess.pgn
 from chess import Board, Piece, BLACK, WHITE, PAWN
 
-from ..chessboard.board import BlindBoard
+from chessboard import BlindBoard
 
 
 def read_boards_from_pgn(pgn_path, use_blindboards=False):
