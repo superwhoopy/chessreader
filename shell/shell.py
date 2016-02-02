@@ -1,7 +1,7 @@
 import cmd
 import sys
 
-import utils, tests, core
+import capture, utils, tests, core
 
 
 class Shell(cmd.Cmd):
@@ -32,6 +32,11 @@ class Shell(cmd.Cmd):
 
     def do_takeback(self, arg):
         pass
+
+    def do_capture(self, arg):
+        '''Capture an image from the webcam'''
+        capt_engine = capture.Fswebcam()
+        capt_engine.capture()
 
     def do_read(self, arg):
         self.core.run()
