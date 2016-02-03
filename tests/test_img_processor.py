@@ -4,9 +4,9 @@ import re
 import chess
 from chess import Piece, PAWN, WHITE, BLACK
 
-from ..chessboard.board import BlindBoard
+from chessboard.board import BlindBoard
 from .utils import natural_sort
-from ..imgprocessor import ImageProcessor
+from imgprocessor import ImageProcessor
 
 
 def compare_blindboards(expected, actual, file_name=None):

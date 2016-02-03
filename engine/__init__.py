@@ -1,6 +1,8 @@
-from .. import utils
-from chess import BLACK, WHITE, Move
 import pexpect
+
+import utils
+import utils.log
+from chess import BLACK, WHITE, Move
 
 class GnuChess:
     '''TODO'''
@@ -10,10 +12,10 @@ class GnuChess:
     class Messages:
         ERR_ILLEGAL_MOVE = "Invalid move"
 
-        RE_REGULAR_MOVE  = '(?P<move_count>\d+)\. '   \
-                           '(?P<black_move>\.\.\. )?' \
-                           '(?P<from_square>[abcdefgh][12345678])' \
-                           '(?P<to_square>[abcdefgh][12345678])'
+        RE_REGULAR_MOVE  = r'(?P<move_count>\d+)\. '   \
+                           r'(?P<black_move>\.\.\. )?' \
+                           r'(?P<from_square>[abcdefgh][12345678])' \
+                           r'(?P<to_square>[abcdefgh][12345678])'
 
     @staticmethod
     def cmdline():

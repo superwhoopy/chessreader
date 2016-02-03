@@ -1,8 +1,9 @@
 '''TODO
 '''
 import chess
+
 import nose.tools
-from ..chessboard.board import BlindBoard
+from chessboard.board import BlindBoard
 from chess import BLACK, WHITE
 
 

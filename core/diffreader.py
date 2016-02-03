@@ -5,18 +5,26 @@ chess.Move objects, or to throw an error if the move is invalid.
 import chess
 from chess import Move
 
-from ..chessboard.board import BlindBoard
-from .. import core, utils
+from chessboard import BlindBoard
+import utils
 
-# list of blindboard diffs for castling moves, and the corresponding moves (as encoded in UCI)
+class IllegalMove(Exception):
+    pass
+
+# list of blindboard diffs for castling moves, and the corresponding moves (as
+# encoded in UCI)
 CASTLING_DIFFS = [
     # king-side
-    (BlindBoard.Diff(chess.BB_E1 | chess.BB_H1, chess.BB_F1 | chess.BB_G1, 0), Move(chess.E1, chess.G1)),
-    (BlindBoard.Diff(chess.BB_E8 | chess.BB_H8, chess.BB_F8 | chess.BB_G8, 0), Move(chess.E8, chess.G8)),
+    (BlindBoard.Diff(chess.BB_E1 | chess.BB_H1, chess.BB_F1 | chess.BB_G1, 0),
+        Move(chess.E1, chess.G1)),
+    (BlindBoard.Diff(chess.BB_E8 | chess.BB_H8, chess.BB_F8 | chess.BB_G8, 0),
+        Move(chess.E8, chess.G8)),
 
     # queen-side
-    (BlindBoard.Diff(chess.BB_E1 | chess.BB_A1, chess.BB_C1 | chess.BB_D1, 0), Move(chess.E1, chess.C1)),
-    (BlindBoard.Diff(chess.BB_E8 | chess.BB_A8, chess.BB_C8 | chess.BB_D8, 0), Move(chess.E8, chess.C8))
+    (BlindBoard.Diff(chess.BB_E1 | chess.BB_A1, chess.BB_C1 | chess.BB_D1, 0),
+        Move(chess.E1, chess.C1)),
+    (BlindBoard.Diff(chess.BB_E8 | chess.BB_A8, chess.BB_C8 | chess.BB_D8, 0),
+        Move(chess.E8, chess.C8))
 ]
 
 
@@ -44,8 +52,9 @@ def _diff_is_simple_move(diff):
 def _diff_sanity_check(diff):
     # sanity check on the board diff
     if diff.length() not in DiffLength.valid:
-        raise core.IllegalMove(
-             'odd move(s) detected in diff: {} (unexpected diff length: {})'.format(diff, diff.length())
+        raise IllegalMove(
+             'odd move(s) detected in diff: {} (unexpected diff length: {})'
+             .format(diff, diff.length())
         )
 
 ################################################################################
@@ -59,8 +68,9 @@ def _read_castling(diff):
         if castling_diff == diff:
             return castling_move
 
-    raise core.IllegalMove('odd move(s) detected in diff: {} '
-                           '(the move has the length of a castling but does not match any)'.format(diff)
+    raise IllegalMove('odd move(s) detected in diff: {} '
+           '(the move has the length of a castling but does not match any)'
+           .format(diff)
     )
 
 
