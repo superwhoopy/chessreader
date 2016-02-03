@@ -1,6 +1,7 @@
 import pexpect
 
 import utils
+import utils.log
 from chess import BLACK, WHITE, Move
 
 class GnuChess:

@@ -6,7 +6,7 @@ import chess
 from chess import Move
 
 from chessboard import BlindBoard
-import utils.log
+import utils
 
 class IllegalMove(Exception):
     pass
