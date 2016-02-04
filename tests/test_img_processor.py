@@ -8,6 +8,7 @@ from chess import Piece, PAWN, WHITE, BLACK
 from chessboard.board import BlindBoard
 from .utils import collect_test_images
 from imgprocessor import ImageProcessor
+from utils.log import debug, warn
 
 
 def compare_blindboards(expected, actual, file_name=None):
@@ -15,12 +16,14 @@ def compare_blindboards(expected, actual, file_name=None):
         info = ""
         if file_name:
             info = "for `%s`" % os.path.basename(file_name)
-        print("BlindBoards are different %s: expected" % info)
-        print(expected)
-        print("But found instead:")
-        print(actual)
+        warn("BlindBoards are different %s: expected" % info)
+        warn(expected)
+        warn("But found instead:")
+        warn(actual)
         raise AssertionError("BlindBoards are different")
-    return
+        return False
+    return True
+
 
 # TODO store the game as a PGN instead ?
 def expected_boards():
@@ -66,7 +69,7 @@ def expected_boards():
 # uncomment the following line to disable the image processor test
 # @nose.tools.nottest
 def test_imgage_processor():
-    '''Test image processor'''
+    '''Test image processor (multiple tests)'''
 
     expected_board = BlindBoard.get_starting_board()
     expected_board.remove_piece_at(chess.E2)
@@ -74,11 +77,11 @@ def test_imgage_processor():
 
     # retrieve all the images paths and sort
     images = collect_test_images('tests/pictures/game000')
-    print("\n  * Calibrating image processor...")
+    debug("Calibrating image processor...")
     processor = ImageProcessor(images[0], images[1])
 
     for img, expected_board in zip(images[2:], expected_boards()):
-        print("  * Processing `%s`..." % os.path.basename(img))
+        debug("Processing `{}`...".format(os.path.basename(img)))
         processor.process(img)
         board = processor.get_blindboard()
-        compare_blindboards(expected_board, board, img)
+        yield compare_blindboards, expected_board, board, img
