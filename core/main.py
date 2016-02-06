@@ -37,7 +37,9 @@ class Core:
             utils.log.warn("Illegal move: {0}".format(move))
             raise IllegalMove(move)
 
+        # the move is legit: change state of board and blindboard
         self.last_valid_board.push(move)
+        self.last_valid_blindboard = new_blindboard
         return move, self.check_game_status()
 
     def check_game_status(self):
