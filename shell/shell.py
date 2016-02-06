@@ -3,6 +3,7 @@ import os
 import sys
 
 import capture, utils, tests, core
+from core.main import IllegalMove
 from imgprocessor import ImageProcessor
 
 
@@ -75,9 +76,12 @@ class Shell(cmd.Cmd):
         capt_engine.capture()
 
     def do_next(self, arg):
-        move, is_not_over = self.core.process_next_move()
-        if not is_not_over:
-            sys.exit(0)  # TODO a bit brutal
+        try:
+            move, is_not_over = self.core.process_next_move()
+            if not is_not_over:
+                sys.exit(0)  # TODO a bit brutal
+        except IllegalMove as e:
+            utils.log.warn("Recieved illegal move: {0}".format(e))
 
     def do_quit(self, arg):
         'Leave the shell and end the program'

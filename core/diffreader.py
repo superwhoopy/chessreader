@@ -8,6 +8,7 @@ from chess import Move
 from chessboard import BlindBoard
 import utils
 
+
 class IllegalMove(Exception):
     pass
 

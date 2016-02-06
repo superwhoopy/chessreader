@@ -4,11 +4,9 @@ import chess
 
 import capture, utils
 import core.diffreader
+from core.diffreader import IllegalMove
 from chessboard import BlindBoard
 
-
-class IllegalMove(Exception):
-    pass
 
 
 class PlayMode(Enum):

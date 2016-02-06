@@ -4,6 +4,9 @@ import sys
 import colorama
 
 
+do_show_debug_messages = True
+'''Set this boolean variable to `True` to enable debug messages'''
+
 def info(msg):
     '''Print out an information message to stdout'''
     print('[INFO]  {}'.format(msg))
@@ -30,10 +33,8 @@ def debug(msg):
     Setting `debug.do_show_debug_messages` to `False` will disable all calls to
     this function.
     '''
-    if not debug.do_show_debug_messages:
+    if not do_show_debug_messages:
         return
     print('{}[DEBUG]{} {}'.format(colorama.Fore.CYAN, colorama.Fore.RESET, msg))
 
-debug.do_show_debug_messages = False
-'''Set this boolean variable to `True` to enable debug messages'''
 
