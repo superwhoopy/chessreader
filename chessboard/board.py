@@ -69,6 +69,9 @@ class BlindBoard(BaseBoard):
         return all(self.occupied_co[color] == other.occupied_co[color]
                    for color in (BLACK, WHITE))
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
     def __str__(self):
         def obfusc(char):
             return 'W' if char in ascii_uppercase else \
