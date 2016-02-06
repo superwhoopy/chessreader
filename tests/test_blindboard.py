@@ -3,12 +3,27 @@
 import chess
 
 import nose.tools
+from nose.tools import eq_
 from chessboard.board import BlindBoard
 from chess import BLACK, WHITE
 
 
 def setUp():
     pass
+
+
+def test_BlindBoard_print():
+    '''Pretty-printing of a blind board'''
+    blindboard = BlindBoard(chess.STARTING_BOARD_FEN)
+    expected = '''b b b b b b b b
+b b b b b b b b
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+W W W W W W W W
+W W W W W W W W'''
+    eq_(str(blindboard), expected)
 
 
 def test_BlindBoardDiff():
@@ -52,6 +67,7 @@ def test_BlindBoard_identical():
     nose.tools.ok_(not diff.filled)
     nose.tools.ok_(not diff.changed)
 
+
 def test_BlindBoard_changes():
     '''Test BlindBoard editing methods'''
     board = BlindBoard.from_dict({chess.A1: WHITE, chess.B2: WHITE})
@@ -59,6 +75,7 @@ def test_BlindBoard_changes():
     board.change_color_at(chess.B2)
     nose.tools.eq_(board, BlindBoard.from_dict({chess.D5: WHITE,
                                                 chess.B2: BLACK}))
+
 
 def tearDown():
     pass

@@ -1,5 +1,6 @@
 import os
 import re
+import nose
 
 import chess
 from chess import Piece, PAWN, WHITE, BLACK
@@ -62,6 +63,8 @@ def expected_boards():
     b.move_piece(chess.B5, chess.D3)
     yield b
 
+# uncomment the following line to disable the image processor test
+# @nose.tools.nottest
 def test_imgage_processor():
     '''Test image processor'''
 

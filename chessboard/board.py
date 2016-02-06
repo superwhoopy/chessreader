@@ -46,7 +46,6 @@ BLACK_START_SQUARES = range(48, 64)
 
 
 class BlindBoard(BaseBoard):
-
     '''
     Semi-blind chessboard representation
 
@@ -74,17 +73,12 @@ class BlindBoard(BaseBoard):
         return not self.__eq__(other)
 
     def __str__(self):
-        board_str = BaseBoard.__str__(self)
-        new_chars = []
-        for char in board_str:
-            new_char = char
-            if char in ascii_uppercase:
-                new_char = 'W'
-            elif char in ascii_lowercase:
-                new_char = 'b'
-            new_chars.append(new_char)
+        def obfusc(char):
+            return 'W' if char in ascii_uppercase else \
+                   'b' if char in ascii_lowercase else \
+                   char
 
-        return ''.join(new_chars)
+        return ''.join( obfusc(char) for char in BaseBoard.__str__(self) )
 
     def set_piece_at(self, square, piece):
         '''
