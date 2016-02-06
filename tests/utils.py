@@ -1,3 +1,4 @@
+import os
 import re
 
 import chess.pgn
@@ -54,3 +55,11 @@ def natural_sort(l):
     convert = lambda text: int(text) if text.isdigit() else text.lower()
     alphanum_key = lambda key: [ convert(c) for c in re.split('([0-9]+)', key) ]
     return sorted(l, key=alphanum_key)
+
+
+def collect_test_images():
+    image_regex = re.compile('board-[0-9]+\.jpg')
+    pictures_folder = os.path.join(os.path.split(__file__)[0], 'pictures')
+    images = [os.path.join(pictures_folder, f) for f in os.listdir(pictures_folder)
+              if image_regex.match(f)]
+    return natural_sort(images)  # board-0.jpg, board-1.jpg, ...

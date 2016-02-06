@@ -6,7 +6,7 @@ import chess
 from chess import Piece, PAWN, WHITE, BLACK
 
 from chessboard.board import BlindBoard
-from .utils import natural_sort
+from .utils import collect_test_images
 from imgprocessor import ImageProcessor
 
 
@@ -73,12 +73,7 @@ def test_imgage_processor():
     expected_board.set_piece_at(chess.E4, Piece(PAWN, WHITE))
 
     # retrieve all the images paths and sort
-    image_regex = re.compile('board-[0-9]+\.jpg')
-    pictures_folder = os.path.join(os.path.split(__file__)[0], 'pictures')
-    images = [os.path.join(pictures_folder, f) for f in os.listdir(pictures_folder)
-              if image_regex.match(f)]
-    images = natural_sort(images)  # board-0.jpg, board-1.jpg, ...
-
+    images = collect_test_images()
     print("\n  * Calibrating image processor...")
     processor = ImageProcessor(images[0], images[1])
 

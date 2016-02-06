@@ -1,4 +1,5 @@
 import itertools, shutil, os
+import logging
 
 import capture
 
@@ -53,5 +54,6 @@ class Mock(capture.ImgCapture):
             output_file = os.path.normpath(output_file)
             shutil.copyfile(next_file, output_file)
             next_file = output_file
+        logging.debug("Sending `{0}`".format(os.path.basename(next_file)))
         return next_file
 

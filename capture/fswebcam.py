@@ -1,7 +1,7 @@
+import logging
 import subprocess
 
 import capture
-from utils.log import debug
 
 
 class Fswebcam(capture.ImgCapture):
@@ -46,7 +46,7 @@ class Fswebcam(capture.ImgCapture):
     def _check_bin():
         '''Make sure that fswebcam exists and ask for its version'''
         cmdline = [Fswebcam.BIN, Fswebcam.OPT_VERSION]
-        debug('calling ' + ' '.join(cmdline))
+        logging.debug('calling ' + ' '.join(cmdline))
 
         try:
             subprocess.check_call(cmdline, timeout=Fswebcam.DEFAULT_TIMEOUT,
@@ -82,7 +82,7 @@ class Fswebcam(capture.ImgCapture):
         args_list = [ Fswebcam.OPT_OUTPUT.format(output_file) ]
 
         cmdline = self.default_cmdline + args_list
-        debug('calling "' + ' '.join(cmdline) + '"')
+        logging.debug('calling "' + ' '.join(cmdline) + '"')
         subprocess.check_call(cmdline, timeout=Fswebcam.DEFAULT_TIMEOUT,
                 stdout=self.stdout, stderr=self.stderr)
 

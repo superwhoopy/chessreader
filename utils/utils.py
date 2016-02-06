@@ -1,6 +1,10 @@
+import os
 import subprocess
 import queue
 
+import re
+
+import tests
 import utils.log as log
 from threading import Thread
 
@@ -121,4 +125,29 @@ class Proc:
         '''
         self.proc.stdin.write(line + '\n')
         self.proc.stdin.flush()
+
+#########################################################################
+
+USER_FOLDER = os.path.join(os.path.expanduser("~"), ".chessreader")
+GAME_REGEX  = re.compile("game_[0-9]+")
+
+
+def get_existing_games():
+    result = []
+    if not os.path.isdir(USER_FOLDER):
+        return result
+    for file_name in os.listdir(USER_FOLDER):
+        file_path = os.path.isdir(os.path.join(USER_FOLDER, file_name))
+        if os.path.isdir(file_path) and GAME_REGEX.match(file_name):
+            result.append(file_path)
+    return tests.utils.natural_sort(result)
+
+
+def create_new_game_folder():
+    if not os.path.isdir(USER_FOLDER):
+        os.mkdir(USER_FOLDER)
+    games = get_existing_games()
+    new_dir = os.path.join(USER_FOLDER, "game_{0}".format(len(games)))
+    os.mkdir(new_dir)
+    return new_dir
 

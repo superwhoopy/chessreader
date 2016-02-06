@@ -1,11 +1,16 @@
+import os
 from enum import Enum
+import logging
 
-from chessboard import BlindBoard
+import chess
+import re
 
+import capture
 import core.diffreader
-import imgprocessor
-import engine
-import utils
+import tests
+from chessboard import BlindBoard
+from imgprocessor import ImageProcessor
+
 
 class IllegalMove(Exception):
     pass
@@ -18,23 +23,48 @@ class PlayMode(Enum):
 
 
 class Core:
-    def __init__(self):
-        self.capture_engine        = imgprocessor.CaptureEngine()
-        self.chess_engine          = engine.GnuChess()
-        self.last_valid_chessboard = BlindBoard.get_starting_board()
 
-    def run(self):
-        pass
+    def __init__(self, image_processor, capture_engine=None):
+        self.capture_engine        = capture_engine or capture.Fswebcam()
+        self.image_processor       = image_processor
+        self.chess_engine          = None  # TODO
+        self.last_valid_blindboard = BlindBoard.get_starting_board()
+        self.last_valid_board      = chess.Board()
 
-    def receive_chessboard(self, new_chessboard):
-        if new_chessboard == self.last_valid_chessboard:
-            pass
+    def process_next_move(self):
+        image_path = self.capture_engine.capture()
+        self.image_processor.process(image_path)
+        new_blindboard = self.image_processor.get_blindboard()
+        diff = new_blindboard.diff(self.last_valid_blindboard)
+        move = core.diffreader.read(diff)
 
-        board_diff = new_chessboard.diff(self.last_valid_chessboard)
-        try:
-            move = core.diffreader.read(board_diff)
-        except IllegalMove as move:
-            utils.log.warn(move)
+        logging.info("{0} played: {1}".format(self.get_turn_str(), move))
+
+        if not self.last_valid_board.is_legal(move):
+            logging.warning("Illegal move: {0}".format(move))
+            raise IllegalMove(move)
+
+        self.last_valid_board.push(move)
+        return move, self.check_game_status()
+
+    def check_game_status(self):
+        turn = self.get_turn_str()
+
+        if self.last_valid_board.is_check():
+            logging.info("{0} is in check!".format(turn))
+        elif self.last_valid_board.is_checkmate():
+            logging.info("{0} is checkmated. Game over!".format(turn))
+            return False
+        elif self.last_valid_board.is_stalemate():
+            logging.info("{0} to move is in stalemate. Game over!".format(turn))
+            return False
+
+        return True
 
     def kill(self):
         pass
+
+    def get_turn_str(self):
+        return "White" if self.last_valid_board.turn else "Black"
+
+
