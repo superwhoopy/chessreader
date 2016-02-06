@@ -1,8 +1,6 @@
-from abc import ABCMeta, abstractmethod
 
-class ImgCapture(metaclass=ABCMeta):
+class ImgCapture(object):
 
-    @abstractmethod
     def capture(self, output_file):
-        pass
+        raise NotImplementedError
 
