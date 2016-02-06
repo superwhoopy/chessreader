@@ -1,7 +1,6 @@
 '''chessreader init module '''
 
 import argparse
-import logging
 import sys
 import colorama
 
@@ -41,7 +40,7 @@ def main(parsed_args):
 
     # Launch test suite?
     if parsed_args.test:
-        logging.info("running chessreader test base")
+        utils.log.info("running chessreader test base")
         tests.run()
         sys.exit(0)
 

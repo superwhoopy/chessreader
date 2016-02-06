@@ -1,15 +1,10 @@
-import os
 from enum import Enum
-import logging
 
 import chess
-import re
 
-import capture
+import capture, utils
 import core.diffreader
-import tests
 from chessboard import BlindBoard
-from imgprocessor import ImageProcessor
 
 
 class IllegalMove(Exception):
@@ -38,10 +33,10 @@ class Core:
         diff = new_blindboard.diff(self.last_valid_blindboard)
         move = core.diffreader.read(diff)
 
-        logging.info("{0} played: {1}".format(self.get_turn_str(), move))
+        utils.log.info("{0} played: {1}".format(self.get_turn_str(), move))
 
         if not self.last_valid_board.is_legal(move):
-            logging.warning("Illegal move: {0}".format(move))
+            utils.log.warn("Illegal move: {0}".format(move))
             raise IllegalMove(move)
 
         self.last_valid_board.push(move)
@@ -51,12 +46,12 @@ class Core:
         turn = self.get_turn_str()
 
         if self.last_valid_board.is_check():
-            logging.info("{0} is in check!".format(turn))
+            utils.log.info("{0} is in check!".format(turn))
         elif self.last_valid_board.is_checkmate():
-            logging.info("{0} is checkmated. Game over!".format(turn))
+            utils.log.info("{0} is checkmated. Game over!".format(turn))
             return False
         elif self.last_valid_board.is_stalemate():
-            logging.info("{0} to move is in stalemate. Game over!".format(turn))
+            utils.log.info("{0} to move is in stalemate. Game over!".format(turn))
             return False
 
         return True

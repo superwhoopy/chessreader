@@ -137,7 +137,7 @@ def get_existing_games():
     if not os.path.isdir(USER_FOLDER):
         return result
     for file_name in os.listdir(USER_FOLDER):
-        file_path = os.path.isdir(os.path.join(USER_FOLDER, file_name))
+        file_path = os.path.join(USER_FOLDER, file_name)
         if os.path.isdir(file_path) and GAME_REGEX.match(file_name):
             result.append(file_path)
     return tests.utils.natural_sort(result)

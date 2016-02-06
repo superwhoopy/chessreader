@@ -1,5 +1,4 @@
 import cmd
-import logging
 import os
 import sys
 
@@ -15,7 +14,7 @@ class Shell(cmd.Cmd):
     prompt = ' (chessreader) '
 
     def __init__(self):
-        super(Shell).__init__()
+        super(Shell, self).__init__()
         self.core = None
         self.capture_engine = None
         self.game_folder = None
@@ -32,16 +31,16 @@ class Shell(cmd.Cmd):
 
     def do_test(self, arg):
         'Run the chessreader test suite'
-        logging.info('Running the test suite')
+        utils.log.info('Running the test suite')
         tests.run()
 
     def do_start(self, arg):
         'Start a new game'
         if self.core:
-            logging.error("A game is already on.")
+            utils.log.error("A game is already on.")
             # TODO 'would you like to start a new one?'
             return
-        logging.info("Starting new game!")
+        utils.log.info("Starting new game!")
 
         self.game_folder = utils.create_new_game_folder()
 
@@ -52,15 +51,20 @@ class Shell(cmd.Cmd):
         empty = self.get_game_image(0)
         start = self.get_game_image(1)
 
-        logging.info("Prepare the empty chessboard and press Enter...")
+        utils.log.info("Prepare the empty chessboard and press Enter...")
         input()
         self.capture_engine.capture(empty)
-        logging.info("Prepare the chessboard in starting position and press Enter...")
+        utils.log.info("Prepare the chessboard in starting position and press Enter...")
         input()
         self.capture_engine.capture(start)
+        utils.log.debug("Calibrating image processor...")
         self.core = core.Core(ImageProcessor(empty, start), self.capture_engine)
-        logging.info("The game is on!")
+        utils.log.info("The game is on!")
 
+    def do_show(self, arg):
+        board_str = self.core.last_valid_board.__str__()
+        print_str = "Next move: {0}\n".format(self.core.get_turn_str())
+        utils.log.info(print_str + board_str)
 
     def do_takeback(self, arg):
         pass
@@ -78,7 +82,7 @@ class Shell(cmd.Cmd):
     def do_quit(self, arg):
         'Leave the shell and end the program'
         # TODO ask for confirmation if ongoing game
-        logging.info("Bye!")
+        utils.log.info("Bye!")
         sys.exit(0)
 
     def get_game_image(self, n):
