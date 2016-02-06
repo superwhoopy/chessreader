@@ -129,7 +129,7 @@ class Proc:
 #########################################################################
 
 USER_FOLDER = os.path.join(os.path.expanduser("~"), ".chessreader")
-GAME_REGEX  = re.compile("game_[0-9]+")
+GAME_REGEX  = re.compile("game_(?P<gameidx>[0-9]{3})")
 
 
 def get_existing_games():
@@ -147,7 +147,8 @@ def create_new_game_folder():
     if not os.path.isdir(USER_FOLDER):
         os.mkdir(USER_FOLDER)
     games = get_existing_games()
-    new_dir = os.path.join(USER_FOLDER, "game_{0}".format(len(games)))
+
+    new_dir = os.path.join(USER_FOLDER, "game_{:03}".format(len(games)))
     os.mkdir(new_dir)
     return new_dir
 

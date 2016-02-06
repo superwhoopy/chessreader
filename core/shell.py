@@ -37,30 +37,16 @@ class Shell(cmd.Cmd):
 
     def do_start(self, arg):
         'Start a new game'
-        if self.core:
-            utils.log.error("A game is already on.")
-            # TODO 'would you like to start a new one?'
-            return
         utils.log.info("Starting new game!")
 
-        self.game_folder = utils.create_new_game_folder()
-
         if arg == self.MOCK_OPTION:
-            self.capture_engine = capture.Mock(tests.utils.collect_test_images())
+            capture_engine = capture.Mock(tests.utils.collect_test_images())
+        else:
+            capture_engine = None
 
-        # TODO Should this be part of the core instead?
-        empty = self.get_game_image(0)
-        start = self.get_game_image(1)
+        # jump to the shell of the Core
+        core.Core(capture_engine).cmdloop()
 
-        utils.log.info("Prepare the empty chessboard and press Enter...")
-        input()
-        self.capture_engine.capture(empty)
-        utils.log.info("Prepare the chessboard in starting position and press Enter...")
-        input()
-        self.capture_engine.capture(start)
-        utils.log.debug("Calibrating image processor...")
-        self.core = core.Core(ImageProcessor(empty, start), self.capture_engine)
-        utils.log.info("The game is on!")
 
     def do_show(self, arg):
         board_str = self.core.last_valid_board.__str__()
@@ -91,5 +77,5 @@ class Shell(cmd.Cmd):
 
     def get_game_image(self, n):
         assert type(n) is int and n > -1
-        return os.path.join(self.game_folder, "board-{0}.png".format(n))
+        return os.path.join(self.game_folder, "board-{:03}.png".format(n))
 

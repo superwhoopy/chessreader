@@ -4,7 +4,7 @@ import argparse
 import sys
 import colorama
 
-import tests, utils, shell
+import tests, utils, core
 
 ################################################################################
 
@@ -45,7 +45,7 @@ def main(parsed_args):
         sys.exit(0)
 
     # default: call the shell
-    shell.Shell().cmdloop()
+    core.Shell().cmdloop()
 
     sys.exit(0)
 
