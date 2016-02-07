@@ -1,7 +1,5 @@
-from enum import Enum
-import chess
-import cmd
-import os
+import chess, cmd, os
+from chessboard import BlindBoard
 
 from imgprocessor import ImageProcessor
 import capture, utils
@@ -9,13 +7,24 @@ from utils import log
 import core.diffreader
 from core.diffreader import IllegalMove
 
-from chessboard import BlindBoard
+#
+# TODO-list for this module:
+#
+#   - implement post-mortem analysis of the game in do_analyze() when
+#     do_live_analysis is False
+#
+#   - implement do_takeback()
+#
+#   - misc. options & parameters implementation - through a dedicated command?
+#     do_set()?
+#        - add mandatory parameter for camera orientation
+#        - implement 'do_keep_trace_file' option: possibly clear the directory
+#          upon leaving - implement __enter__() and __exit__() methods?
+#        - enable/disable do_show_each_move dynamically
+#
 
 class Core(cmd.Cmd):
     '''TO-FUCKING-DO'''
-
-    # TODO: by default, cleanup directory mess when this object is destructed
-    # (use __enter__() and __exit__() methods?)
 
     prompt = ' (chessreader-PLAYING) '
 
@@ -42,6 +51,7 @@ class Core(cmd.Cmd):
 
     def preloop(self):
         '''TODO'''
+        # whether live analysis is on or off, perform calibration now
         self._calibration()
         log.info("The game is on!")
 
@@ -66,7 +76,7 @@ class Core(cmd.Cmd):
             self.current_board.push(chess.Move.null())
 
     def do_show(self, _):
-        '''Show the current status of the board'''
+        '''Show the current status of the board in a human-readable fashion'''
         print_str = "\nNext move: {0}\n".format(self._get_turn_str())
         utils.log.info(print_str + str(self.current_board) + '\n')
 
@@ -76,6 +86,11 @@ class Core(cmd.Cmd):
             log.warn('live analysis is on: nothing to do')
             return
         # consider the game is over, and analyze all the pictures available
+        # TODO
+
+    def do_takeback(self, _):
+        '''TODO'''
+        pass
 
     def do_quit(self, _):
         '''End the current game and leave'''
@@ -102,6 +117,8 @@ class Core(cmd.Cmd):
             log.info("Calibrating image processor, please wait...")
             self.image_processor = ImageProcessor(empty_img, start_img)
             log.info("Calibration completed")
+        else:
+            log.info('Delaying image processor calibration')
 
 
     def _get_img_name(self):

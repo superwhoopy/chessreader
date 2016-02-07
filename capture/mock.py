@@ -51,8 +51,12 @@ class Mock(capture.ImgCapture):
         next_file = next(self.iterator)
         if output_file:
             output_file = os.path.normpath(output_file)
+            utils.log.debug('copying "{}" -> "{}"'.format(next_file,
+                output_file))
             shutil.copyfile(next_file, output_file)
-            next_file = output_file
-        utils.log.debug("Sending `{0}`".format(os.path.basename(next_file)))
-        return next_file
+        else:
+            output_file = next_file
+
+        utils.log.debug("sending `{}`".format(os.path.basename(output_file)))
+        return output_file
 
