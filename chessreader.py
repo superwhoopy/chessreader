@@ -36,7 +36,7 @@ def main(parsed_args):
     colorama.init()
 
     # Enable debug messages?
-    utils.log.debug.do_show_debug_messages = parsed_args.debug
+    utils.log.do_show_debug_messages = parsed_args.debug
 
     # Launch test suite?
     if parsed_args.test:

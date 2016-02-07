@@ -4,15 +4,25 @@ import sys
 import colorama
 
 
-do_show_debug_messages = True
+do_show_debug_messages = False
 '''Set this boolean variable to `True` to enable debug messages'''
 
+def multiline(func_call):
+    '''TODO'''
+    def _f(msg):
+        for line in msg.split('\n'):
+            func_call(line)
+    return _f
+
+
+@multiline
 def info(msg):
     '''Print out an information message to stdout'''
     print('[INFO]  {}'.format(msg))
     return
 
 
+@multiline
 def warn(msg):
     '''Print out a warning message to stderr'''
     print('{}[WARN]{}  {}'.format(colorama.Fore.YELLOW,
@@ -27,6 +37,7 @@ def error(msg):
     sys.exit(42)
 
 
+@multiline
 def debug(msg):
     '''Print out a debug message to stdout.
 

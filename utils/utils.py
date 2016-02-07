@@ -128,7 +128,7 @@ class Proc:
 
 #########################################################################
 
-USER_FOLDER = os.path.join(os.path.expanduser("~"), ".chessreader")
+USER_FOLDER = os.path.join(os.path.expanduser("~"), '.config', "chessreader")
 GAME_REGEX  = re.compile("game_(?P<gameidx>[0-9]{3})")
 
 
@@ -151,4 +151,11 @@ def create_new_game_folder():
     new_dir = os.path.join(USER_FOLDER, "game_{:03}".format(len(games)))
     os.mkdir(new_dir)
     return new_dir
+
+
+def confirm_yes_no(msg):
+    '''TODO'''
+    log.warn(msg)
+    ans = input("(y/n): ")
+    return ans.strip() in ['y', 'Y']
 

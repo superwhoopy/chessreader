@@ -38,6 +38,7 @@ class Fswebcam(capture.ImgCapture):
     OPT_OUTPUT     = '--save={}'
     OPT_PALETTE    = '--palette={}'
     OPT_SKIP       = '--skip={}'
+    OPT_ROTATE     = '--rotate={}'
 
     DEFAULT_TIMEOUT = 15
 
@@ -58,18 +59,24 @@ class Fswebcam(capture.ImgCapture):
         self._check_bin()
 
         # DEFAULT VALUES
-        self.resolution          = '2592x1944'
+        self.resolution          = '1024x768'
+        self.rotate              = 0
         self.frames_per_capture  = 10
         self.skip_before_capture = 3
         self.default_output      = 'capture.jpg'
+
         self.stdout              = subprocess.DEVNULL
         self.stderr              = subprocess.DEVNULL
 
-        self.default_cmdline = [Fswebcam.BIN, '--no-banner',
-                  Fswebcam.OPT_RESOLUTION.format(self.resolution),
-                  Fswebcam.OPT_FRAMES.format(self.frames_per_capture),
-                  Fswebcam.OPT_SKIP.format(self.skip_before_capture),
-                  ]
+    def _cmdline(self):
+        return [
+                self.BIN,
+                '--no-banner',
+                self.OPT_RESOLUTION.format(self.resolution),
+                self.OPT_FRAMES.format(self.frames_per_capture),
+                self.OPT_SKIP.format(self.skip_before_capture),
+                self.OPT_ROTATE.format(self.rotate),
+              ]
 
     def capture(self, output_file=None):
         '''Capture one frame
@@ -78,11 +85,11 @@ class Fswebcam(capture.ImgCapture):
             output_file (str): name of the output JPG file
         '''
         output_file = output_file or self.default_output
-        args_list = [ Fswebcam.OPT_OUTPUT.format(output_file) ]
+        args_list = [ self.OPT_OUTPUT.format(output_file) ]
 
-        cmdline = self.default_cmdline + args_list
+        cmdline = self._cmdline() + args_list
         utils.log.debug('calling "' + ' '.join(cmdline) + '"')
-        subprocess.check_call(cmdline, timeout=Fswebcam.DEFAULT_TIMEOUT,
+        subprocess.check_call(cmdline, timeout=self.DEFAULT_TIMEOUT,
                 stdout=self.stdout, stderr=self.stderr)
 
         return output_file
