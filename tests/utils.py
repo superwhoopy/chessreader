@@ -1,5 +1,6 @@
 import os
 import re
+import nose
 
 import chess.pgn
 from chess import Board, Piece, BLACK, WHITE, PAWN
@@ -57,9 +58,9 @@ def natural_sort(l):
     return sorted(l, key=alphanum_key)
 
 
-def collect_test_images():
+@nose.tools.nottest
+def collect_test_images(dir_path):
     image_regex = re.compile('board-[0-9]+\.jpg')
-    pictures_folder = os.path.join(os.path.split(__file__)[0], 'pictures')
-    images = [os.path.join(pictures_folder, f) for f in os.listdir(pictures_folder)
+    images = [os.path.join(dir_path, f) for f in os.listdir(dir_path)
               if image_regex.match(f)]
     return natural_sort(images)  # board-0.jpg, board-1.jpg, ...

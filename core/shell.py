@@ -35,8 +35,12 @@ class Shell(cmd.Cmd):
 
         # parse the options
         args_list = arg.split()
-        capture_engine = capture.Mock(tests.utils.collect_test_images()) \
-                if self.OPT_MOCK in args_list else None
+        if self.OPT_MOCK in args_list:
+            test_images = \
+                tests.utils.collect_test_images('tests/pictures/game000')
+            capture_engine = capture.Mock(test_images)
+        else:
+            capture_engine = None
         do_live_analysis = self.OPT_DELAYED_ANALYSIS not in args_list
 
         # jump to the shell of the Core

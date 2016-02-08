@@ -73,7 +73,7 @@ def test_imgage_processor():
     expected_board.set_piece_at(chess.E4, Piece(PAWN, WHITE))
 
     # retrieve all the images paths and sort
-    images = collect_test_images()
+    images = collect_test_images('tests/pictures/game000')
     print("\n  * Calibrating image processor...")
     processor = ImageProcessor(images[0], images[1])
 

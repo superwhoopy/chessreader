@@ -12,7 +12,7 @@ class ErrMsg:
 
 def test_mock():
     '''capture interface mock'''
-    files_list = [ 'tests/pictures/board-{}.jpg'.format(idx) \
+    files_list = [ 'tests/pictures/game000/board-{}.jpg'.format(idx) \
                    for idx in range(0,17) ]
     cap = Mock(files_list)
 

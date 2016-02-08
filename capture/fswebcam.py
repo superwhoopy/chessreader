@@ -59,10 +59,10 @@ class Fswebcam(capture.ImgCapture):
         self._check_bin()
 
         # DEFAULT VALUES
-        self.resolution          = '1024x768'
-        self.rotate              = 0
-        self.frames_per_capture  = 10
-        self.skip_before_capture = 3
+        self.resolution          = '640x480'
+        self.rotate              = 90
+        self.frames_per_capture  = 5
+        self.skip_before_capture = 30
         self.default_output      = 'capture.jpg'
 
         self.stdout              = subprocess.DEVNULL
