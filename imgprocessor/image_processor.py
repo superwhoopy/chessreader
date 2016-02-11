@@ -4,7 +4,6 @@ import math
 from math import floor, ceil
 import operator
 import os
-import itertools
 
 # Additional packages ##########################################################
 
@@ -100,13 +99,9 @@ class ImageProcessor(object):
         TODO
     """
 
-    LINE_ANGLE_TOLERANCE = 10./180. * math.pi
+    LINE_ANGLE_TOLERANCE = 30./180. * math.pi
     '''tolerance threshold (in radians) to filter horizontal and vertical
     lines'''
-
-    OCCUPANCY_THRESHOLD = 0.2
-    '''if a binary square image has more than this proportion of white pixels,
-    it is considered occupied'''
 
     TRACE_DIR = "trace_images"
     '''name of directory where intermediary images will be stored'''
@@ -169,6 +164,9 @@ class ImageProcessor(object):
         debug("Training color classifier...")
         self._train_color_classifier(self.starting_pos_img)
 
+        self.calibrate_occupancy_threshold()
+        debug("Occupancy threshold set to {}".format(self.occupancy_threshold))
+
 
 
     def process(self, image_path, reference=None):
@@ -196,6 +194,7 @@ class ImageProcessor(object):
 
         debug("Computing occupancy matrix...")
         self._occupancy_matrix = self.compute_occupancy_matrix()
+        debug(str(self._occupancy_matrix))
         debug("Computing blindboard matrix...")
         self._blindboard_matrix = self.compute_blindboard_matrix()
 
@@ -210,7 +209,7 @@ class ImageProcessor(object):
             info("Number of mislabeled pieces: {}".format(number_errors))
 
         debug("Blindboard matrix:")
-        debug(self._blindboard_matrix)
+        debug(str(self._blindboard_matrix))
 
 
     @staticmethod
@@ -256,10 +255,10 @@ class ImageProcessor(object):
         vertical_lines = []
         horizontal_lines = []
         for intensity, theta, r in zip(*hough_peaks):
-            if abs(theta) < self.LINE_ANGLE_TOLERANCE:
+            if np.fabs(theta) < self.LINE_ANGLE_TOLERANCE:
                 vertical_lines.append((intensity, theta, r))
-            elif abs(abs(theta) - math.pi / 2) < self.LINE_ANGLE_TOLERANCE:
-                horizontal_lines.append((intensity, abs(theta), abs(r)))
+            elif np.fabs(np.fabs(theta) - math.pi / 2) < self.LINE_ANGLE_TOLERANCE:
+                horizontal_lines.append((intensity, theta, r))
 
         # only keep the 9 most significant lines of each direction and sort
         # them by radius, to return edges from top to bottom, and left to right
@@ -272,8 +271,16 @@ class ImageProcessor(object):
         intersections = []
         for _, theta1, r1 in horizontal_lines:
             for _, theta2, r2 in vertical_lines:
-                x_inter = r1*np.cos(theta1) + r2*np.cos(theta2)
-                y_inter = r1*np.sin(theta1) + r2*np.sin(theta2)
+                # can this be numerically unstable? denum is below 1e-10 in some
+                # cases here
+                #
+                # Well it tends to zero when one line is horizontal and the
+                # other one vertical! Let's hope the chessboard is just a bit
+                # tilted after all...
+                denum = np.cos(theta1) * np.sin(theta2) - \
+                        np.sin(theta1) * np.cos(theta2)
+                x_inter = (r1 * np.sin(theta2) - r2 * np.sin(theta1)) / denum
+                y_inter = (r2 * np.cos(theta1) - r1 * np.cos(theta2)) / denum
                 # register this intersection iff. it is *inside* the image...
                 if 0 < x_inter < image.shape[1] \
                         and 0 < y_inter < image.shape[0]:
@@ -307,19 +314,21 @@ class ImageProcessor(object):
 
         # 32 pieces (16 black, 16 white), 3 color channels
         training_data = np.zeros((32, 3))
-        training_labels = [BLACK for _ in range(16)] + \
-                          [WHITE for _ in range(16)]
+        training_labels = [WHITE for _ in range(16)] + \
+                          [BLACK for _ in range(16)]
         pieces_indices = [(i, j) for i in [0, 1, 6, 7] for j in range(8)]
 
         binary_diff_squares = self.cut_squares(
                 self.compute_binary_diff_image(img), self._edges)
+
+        # TODO: smells like shit...
 
         for k, index in enumerate(pieces_indices):
             square = initial_squares[index]
             mask = binary_diff_squares[index]
             training_data[k, :] = np.mean(square[mask], axis=0)
 
-        if self.verbose:
+        if self.trace:
             self.save_pca_plot(training_data, training_labels, self.TRACE_DIR)
 
         self.color_classifier.fit(training_data, training_labels)
@@ -342,26 +351,45 @@ class ImageProcessor(object):
         images_matrix = np.empty((8, 8), dtype=object)
         edges_matrix = np.reshape(edges, (9, 9, 2))
 
-        for i, j in itertools.product(range(8), range(8)):
-            top_left = edges_matrix[i][j]
-            bottom_right = edges_matrix[i + 1][j + 1]
-            square_image = input_image[
-                        floor(top_left[1]):ceil(bottom_right[1]),
-                        floor(top_left[0]):ceil(bottom_right[0])
-                    ]
-            images_matrix[i, j] = square_image
+        for i in range(8):
+            for j in range(8):
+                top_left = edges_matrix[i][j]
+                bottom_right = edges_matrix[i + 1][j + 1]
+                x_low = floor(top_left[0])     ; x_high = ceil(bottom_right[0])
+                y_low = floor(bottom_right[1]) ; y_high = ceil(top_left[1])
+                assert x_low < x_high
+                assert y_low < y_high
+                square_image = input_image[ y_low:y_high, x_low:x_high ]
+                images_matrix[i, j] = square_image
         return images_matrix
 
 
-    def compute_occupancy_matrix(self):
+    def calibrate_occupancy_threshold(self):
+        binary_diff_image = \
+                self.compute_binary_diff_image(self.starting_pos_img)
+        binary_diff_squares = self.cut_squares(binary_diff_image, self._edges)
+
+        threshold = 1.
+        # for each cut square
+        for i in [0, 1, 6, 7]:
+            for j in range(8):
+                square = binary_diff_squares[i, j]
+                ratio = np.sum(square) / square.size
+                threshold = min(threshold, ratio)
+
+        self.occupancy_threshold = threshold - .05
+
+
+    def compute_occupancy_matrix(self, img=None):
+        img = img or self.image
 
         occupancy_matrix = np.empty((8, 8), dtype=bool)
         occupancy_matrix.fill(False)
 
-        binary_diff_image = self.compute_binary_diff_image(self.image)
+        binary_diff_image = self.compute_binary_diff_image(img)
         binary_diff_squares = self.cut_squares(binary_diff_image, self._edges)
 
-        if self.verbose:
+        if self.trace:
             self.plot_square_images(binary_diff_squares,
                                     os.path.join(self.temp_image_dir,
                                     "diff_bw_squares.png"))
@@ -371,10 +399,9 @@ class ImageProcessor(object):
         for i in range(binary_diff_squares.shape[0]):
             for j in range(binary_diff_squares.shape[1]):
                 square = binary_diff_squares[i, j]
-                n_pixels = square.shape[0] * square.shape[1]
-                # TODO improve this rule ?
+                n_pixels = square.size
                 occupancy_matrix[i, j] = \
-                    np.sum(square) / n_pixels > self.OCCUPANCY_THRESHOLD
+                    np.sum(square) / n_pixels > self.occupancy_threshold
                 self._processed_square_images[i, j] = square
 
         return occupancy_matrix
@@ -400,7 +427,7 @@ class ImageProcessor(object):
         square_images = self.cut_squares(color.rgb2lab(self.image), self._edges)
         square_colors = np.zeros((64, 3))
 
-        if self.verbose:
+        if self.trace:
             # an 8x8 matrix which will store the representative color of each
             # square (as 20x20 pixels images)
             square_color_images = np.zeros((8,8,20,20,3), dtype=np.uint8)
@@ -411,17 +438,17 @@ class ImageProcessor(object):
                 piece_mask = self._processed_square_images[i,j]
                 square_colors[k,] = \
                         np.percentile(square_image[piece_mask], 60, axis=0)
-                if self.verbose:
+                if self.trace:
                     rgb_col = 255. * \
                             color.lab2rgb(np.array(square_colors[k,],
                                 ndmin=3))[0,0]
                     square_color_images[i,j,:,:,] = np.array(rgb_col,
                                                              dtype=np.uint8)
-            elif self.verbose:
+            elif self.trace:
                 square_color_images[i,j,:,:,] = np.array([0,0,255],
                                                          dtype=np.uint8)
 
-        if self.verbose:
+        if self.trace:
             self.plot_square_images(square_color_images,
                     os.path.join(self.temp_image_dir, "square_colors.png"))
 
@@ -429,7 +456,7 @@ class ImageProcessor(object):
         square_colors = square_colors[occupied_squares]
 
         predictions = self.color_classifier.predict(square_colors)
-        if self.verbose:
+        if self.trace:
             self.save_pca_plot(square_colors, predictions, self.temp_image_dir)
 
         estimates = np.empty((64,), dtype=object)
@@ -460,8 +487,7 @@ class ImageProcessor(object):
             raise ImageProcessorException(
                 "The `.process` method has not been called on this object yet")
         occupied_squares = {}
-        for (i,j), entry in np.ndenumerate(self._blindboard_matrix):
-            col = j ; row = 7-i
+        for (row, col), entry in np.ndenumerate(self._blindboard_matrix):
             if entry is not None:
                 occupied_squares[chess.square(col, row)] = bool(entry)
 
@@ -489,6 +515,7 @@ class ImageProcessor(object):
 
         for i, edge in enumerate(self._edges, 1):
             plt.text(edge[0], edge[1], str(i), color='blue')
+            plt.plot(edge[0], edge[1], 'b+')
 
         plt.axis((0, n_cols, n_rows, 0))
         plt.savefig(os.path.join(self.TRACE_DIR, "edges_and_squares.png"))
@@ -498,10 +525,25 @@ class ImageProcessor(object):
         fig, axes = plt.subplots(nrows=8, ncols=8)
         for i in range(8):
             for j in range(8):
-                axes[i][j].imshow(matrix[i, j], cmap=plt.cm.gray)
+                col = 7-i; row = j
+                axes[i][j].imshow(matrix[col, row], cmap=plt.cm.gray)
                 axes[i][j].axis('off')
         plt.plot()
         plt.savefig(file_path)
+
+    @staticmethod
+    def _plot_all_lines(img, peaks, imgname="all_lines.png"):
+        # peaks: list of tuples (_, angle, dist)
+        plt.clf()
+        axis = plt.imshow(img)
+        rows, cols, _ = img.shape
+        for _, angle, dist in peaks:
+            y0 = (dist - 0 * np.cos(angle)) / np.sin(angle)
+            y1 = (dist - cols * np.cos(angle)) / np.sin(angle)
+            plt.plot((0, cols), (y0, y1), '-r')
+
+        plt.axis((0, cols, rows, 0))
+        plt.savefig(os.path.join(ImageProcessor.TRACE_DIR, imgname))
 
     def save_image(self, name, image, path=None):
         if path is None:
@@ -510,24 +552,14 @@ class ImageProcessor(object):
 
 
 if __name__ == "__main__":
-
-    # FOR DEBUGGING PURPOSES
-
-    @adapt_rgb(each_channel)
-    def rgb_rescale_intensity(img):
-        p2, p98 = np.percentile(img, (10, 90))
-        return exposure.rescale_intensity(img, in_range=(p2, p98))
-
-    def plot(img):
-        plt.imshow(img, cmap=plt.cm.gray)
-
-    os.chdir(os.path.split(__file__)[0])
-    print("TEST")
-
-    pcr = ImageProcessor("../tests/pictures/board-0.jpg",
-                         "../tests/pictures/board-1.jpg", verbose=True)
-    pcr.process('../tests/pictures/board-3.jpg')
-    print(pcr.get_blindboard())
+    import utils
+    utils.log.do_show_debug_messages = True
+    EMPTY_BOARD='tests/pictures/game001/empty.jpg'
+    START_BOARD='tests/pictures/game001/start.jpg'
+    MOVE='tests/pictures/game001/board-003-1.jpg'
+    imgproc = ImageProcessor(EMPTY_BOARD, START_BOARD, trace=True)
+    imgproc.process(MOVE)
+    debug(imgproc.get_blindboard())
 
 
 

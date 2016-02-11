@@ -1,6 +1,7 @@
 from nose.tools import eq_, ok_
 import os, filecmp
 
+import tests.utils
 from capture import Mock
 
 class ErrMsg:
@@ -12,8 +13,7 @@ class ErrMsg:
 
 def test_mock():
     '''capture interface mock'''
-    files_list = [ 'tests/pictures/game000/board-{}.jpg'.format(idx) \
-                   for idx in range(0,17) ]
+    files_list = tests.utils.collect_test_images('tests/pictures/game000')
     cap = Mock(files_list)
 
     for idx in range(0,17):
