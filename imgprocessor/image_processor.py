@@ -8,6 +8,7 @@ import os
 # Additional packages ##########################################################
 
 import chess
+import itertools
 from chess import BLACK, WHITE
 
 import numpy as np
@@ -138,9 +139,8 @@ class ImageProcessor(object):
         self.color_classifier         = None
 
         # mkdir the trace directory if it does not exist
-        if self.trace:
-            if not os.path.isdir(self.TRACE_DIR):
-                os.mkdir(self.TRACE_DIR)
+        if self.trace and not os.path.isdir(self.TRACE_DIR):
+            os.mkdir(self.TRACE_DIR)
 
         if empty_board_path:
             self.load_empty_board(empty_board_path)
@@ -376,6 +376,14 @@ class ImageProcessor(object):
 
         self.color_classifier.fit(training_data, training_labels)
 
+        self.square_classifier = KNeighborsClassifier()
+        training_labs = [1 for _ in range(2*8)] + [0 for _ in range (4*8)] + \
+            [1 for _ in range(2*8)]
+
+        features = self.extract_features(img, n_features=5)
+        self.square_classifier.fit(features, training_labs)
+        self.save_pca_plot(features, training_labs, ".")
+
 
     @staticmethod
     def cut_squares(input_image, edges):
@@ -419,48 +427,56 @@ class ImageProcessor(object):
 
     def calibrate_occupancy_threshold(self):
         binary_diff_image = \
-                self.compute_binary_diff_image(self.starting_pos_img)
+            self.compute_binary_diff_image(self.starting_pos_img)
         binary_diff_squares = self.cut_squares(binary_diff_image, self._edges)
 
-        threshold = 1.
-        # for each cut square
-        for i in [0, 1, 6, 7]:
-            for j in range(8):
-                square = binary_diff_squares[i, j]
-                ratio = np.sum(square) / square.size
-                threshold = min(threshold, ratio)
+        min_ratio_occupied = 1. ; max_ratio_empty = 0.
 
-        self.occupancy_threshold = threshold - .05
+        for i,j in itertools.product(range(8), range(8)):
+            square = binary_diff_squares[i, j]
+            ratio = np.sum(square) / square.size
+            if i in {0,1,6,7}:
+                min_ratio_occupied = min(min_ratio_occupied, ratio)
+            else:
+                max_ratio_empty = max(max_ratio_empty, ratio)
 
+        self.occupancy_threshold = (max_ratio_empty + min_ratio_occupied) / 2
+
+    def extract_features(self, img, n_features=5):
+        features = np.zeros((64, n_features))
+        bw_img = self.compute_binary_diff_image(img, binary=False)
+        bw_squares = self.cut_squares(bw_img, self._edges)
+
+        for k, (i,j) in enumerate(itertools.product(range(8), range(8))):
+            features[k,] = np.histogram(bw_squares[i,j],
+                                range=(np.min(bw_img), np.max(bw_img)),
+                                density=True, bins=n_features)[0]
+        return features
 
     def compute_occupancy_matrix(self, img=None):
-        img = img or self.image
 
-        occupancy_matrix = np.empty((8, 8), dtype=bool)
-        occupancy_matrix.fill(False)
+        img = img or self.image
+        features = self.extract_features(img)
+        predictions = self.square_classifier.predict(features)
+        occupancy_matrix = np.reshape(predictions, (8,8))
 
         binary_diff_image = self.compute_binary_diff_image(img)
         binary_diff_squares = self.cut_squares(binary_diff_image, self._edges)
 
-        if self.trace:
-            self.plot_square_images(binary_diff_squares,
-                                    os.path.join(self.temp_image_dir,
-                                    "diff_bw_squares.png"))
+        # if self.trace:
+        #     self.plot_square_images(binary_diff_squares,
+        #                             os.path.join(self.temp_image_dir,
+        #                             "diff_bw_squares.png"))
 
         self._processed_square_images = np.empty((8, 8), dtype=np.ndarray)
-
-        for i in range(binary_diff_squares.shape[0]):
-            for j in range(binary_diff_squares.shape[1]):
-                square = binary_diff_squares[i, j]
-                n_pixels = square.size
-                occupancy_matrix[i, j] = \
-                    np.sum(square) / n_pixels > self.occupancy_threshold
-                self._processed_square_images[i, j] = square
+        for i,j in itertools.product(range(8), range(8)):
+            square = binary_diff_squares[i, j]
+            self._processed_square_images[i, j] = square
 
         return occupancy_matrix
 
 
-    def compute_binary_diff_image(self, new_image):
+    def compute_binary_diff_image(self, new_image, binary=True):
         """
         Compute an Otsu-thresholded image corresponding to the
         absolute difference between the empty chessboard image and the
@@ -472,7 +488,7 @@ class ImageProcessor(object):
         adj_image = exposure.adjust_gamma(color.rgb2gray(new_image), 0.1)
         diff_image = exposure.adjust_gamma(np.abs(adj_image - adj_start_image),
                                            0.3)
-        return diff_image > threshold_otsu(diff_image)
+        return diff_image > threshold_otsu(diff_image) if binary else diff_image
 
 
     def compute_blindboard_matrix(self):
@@ -605,6 +621,7 @@ class ImageProcessor(object):
 
 
 if __name__ == "__main__":
+
     import utils
     utils.log.do_show_debug_messages = True
     MODULE_FOLDER = os.path.join(os.path.dirname(__file__), "..")
@@ -612,8 +629,15 @@ if __name__ == "__main__":
     START_BOARD= os.path.join(MODULE_FOLDER, 'tests/pictures/game001/start.jpg')
     MOVE = os.path.join(MODULE_FOLDER, 'tests/pictures/game001/board-003-1.jpg')
     imgproc = ImageProcessor(EMPTY_BOARD, START_BOARD, trace=True)
+
+
     imgproc.process(MOVE)
     debug(imgproc.get_blindboard())
 
 
+'''
 
+    for i,j in itertools.product(range(8), range(8)):
+        x[i,j] = np.histogram(m[i,j], range=(np.min(diff_image),np.max(diff_image)), density=True)[0]
+    a = np.reshape(x, (64,10))
+'''
