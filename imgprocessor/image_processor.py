@@ -103,6 +103,10 @@ class ImageProcessor(object):
     '''tolerance threshold (in radians) to filter horizontal and vertical
     lines'''
 
+    ANGLE_EPSILON = 1e-3
+    '''tolerance (in radians) to consider two angles to be close enough for the
+    corresponding Hough lines to be parallel'''
+
     TRACE_DIR = "trace_images"
     '''name of directory where intermediary images will be stored'''
 
@@ -239,13 +243,15 @@ class ImageProcessor(object):
         image_canny = self.compute_canny_image(image)
         h, theta, d = hough_line(image_canny)
 
-        # Small trick: we expect to get something like 11 horizontal lines and
-        # another 11 vertical lines: indeed the chessboard is made of 8 rows and
-        # 8 columns, i.e. 9 lines, plus 2 lines for the edges of the chessboard.
-        # So, to help hough_line_peaks() let's set the min. distance expected
-        # between two lines to the size of the image divided by 11.
-        # TODO: better way? Might cause problems if the board does not fit the
-        # whole frame...
+        '''
+        Small trick: we expect to get something like 11 horizontal lines and
+        another 11 vertical lines: indeed the chessboard is made of 8 rows and
+        8 columns, i.e. 9 lines, plus 2 lines for the edges of the chessboard.
+        So, to help hough_line_peaks() let's set the min. distance expected
+        between two lines to the size of the image divided by 11.
+        TODO: better way? Might cause problems if the board does not fit the
+        whole frame...
+        '''
         min_distance = int(floor(image.shape[1] / 11))
 
         hough_peaks = hough_line_peaks(h, theta, d, min_distance=min_distance,
@@ -254,6 +260,18 @@ class ImageProcessor(object):
         # separate horizontal from vertical lines
         vertical_lines = []
         horizontal_lines = []
+
+        '''
+        In Hough space, straight lines are parametrized by coefficients (r,θ):
+        r = x.cos(θ) + y.sin(θ) ; (r,θ) are the polar coordinates of
+        the point on the line which lies closest to the origin, with r being
+        either positive or negative, and -π/2 ≤ θ ≤ π/2   (with π/2 ≈ 1.57)
+
+        A horizontal line is therefore one with θ=±π/2, and a vertical line is
+        one with θ=0.
+
+        Finally, two lines are parallel iif they have the same θ (mod π/2).
+        '''
         for intensity, theta, r in zip(*hough_peaks):
             if np.fabs(theta) < self.LINE_ANGLE_TOLERANCE:
                 vertical_lines.append((intensity, theta, r))
@@ -267,23 +285,27 @@ class ImageProcessor(object):
             del lines[9:]                          # only keep the 9 first
             lines.sort(key=operator.itemgetter(2)) # sort them by radius
 
-        # now let's find the intersections of these 18 lines
+        '''
+        Now let's find the intersections of these 18 lines.
+        We are solving the following system:
+        r1 = x.cos(θ1) + y.sin(θ1)  and  r2 = x.cos(θ2) + y.sin(θ2)   for (x,y)
+        The non-degenerate solution is:
+        x = (r1.sin(θ2) - r2.sin(θ1))/D  and  y = (r2.cos(θ1) - r1.cos(θ2))/D
+        with D = cos(θ1).sin(θ2) - sin(θ1).cos(θ2) = sin(θ2-θ1)
+        We can see that this holds only if θ1 ≠ θ2, i.e. only if the lines are
+        not parallel (which makes sense!).
+        '''
         intersections = []
         for _, theta1, r1 in horizontal_lines:
             for _, theta2, r2 in vertical_lines:
-                # can this be numerically unstable? denum is below 1e-10 in some
-                # cases here
-                #
-                # Well it tends to zero when one line is horizontal and the
-                # other one vertical! Let's hope the chessboard is just a bit
-                # tilted after all...
-                denum = np.cos(theta1) * np.sin(theta2) - \
-                        np.sin(theta1) * np.cos(theta2)
+                # don't attempt to compute the intersection if the lines are parallel
+                denum = np.sin(theta2 - theta1)
+                if denum < self.ANGLE_EPSILON:
+                    continue
                 x_inter = (r1 * np.sin(theta2) - r2 * np.sin(theta1)) / denum
                 y_inter = (r2 * np.cos(theta1) - r1 * np.cos(theta2)) / denum
-                # register this intersection iff. it is *inside* the image...
-                if 0 < x_inter < image.shape[1] \
-                        and 0 < y_inter < image.shape[0]:
+                # register this intersection iff. it is *inside* the image
+                if 0 < x_inter < image.shape[1] and 0 < y_inter < image.shape[0]:
                     intersections.append((x_inter, y_inter))
 
         hough_lines = horizontal_lines + vertical_lines
