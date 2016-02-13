@@ -554,9 +554,10 @@ class ImageProcessor(object):
 if __name__ == "__main__":
     import utils
     utils.log.do_show_debug_messages = True
-    EMPTY_BOARD='tests/pictures/game001/empty.jpg'
-    START_BOARD='tests/pictures/game001/start.jpg'
-    MOVE='tests/pictures/game001/board-003-1.jpg'
+    MODULE_FOLDER = os.path.join(os.path.dirname(__file__), "..")
+    EMPTY_BOARD = os.path.join(MODULE_FOLDER, 'tests/pictures/game001/empty.jpg')
+    START_BOARD= os.path.join(MODULE_FOLDER, 'tests/pictures/game001/start.jpg')
+    MOVE = os.path.join(MODULE_FOLDER, 'tests/pictures/game001/board-003-1.jpg')
     imgproc = ImageProcessor(EMPTY_BOARD, START_BOARD, trace=True)
     imgproc.process(MOVE)
     debug(imgproc.get_blindboard())
