@@ -22,6 +22,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from skimage.color.adapt_rgb import adapt_rgb, each_channel
 
 # Internal packages ############################################################
+from sklearn.svm import SVC
 
 from chessboard.board import BlindBoard
 from utils.log import error, debug, info, warn
@@ -49,6 +50,8 @@ class ImageProcessorException(Exception):
     '''Default exception raised on various occasions by `ImageProcessor`'''
     pass
 
+def chi_square_dist(x, y):
+    return 2*np.sum((x-y)**2 / (x+y))
 
 class ImageProcessor(object):
     """
@@ -168,8 +171,6 @@ class ImageProcessor(object):
         debug("Training color classifier...")
         self._train_color_classifier(self.starting_pos_img)
 
-        self.calibrate_occupancy_threshold()
-        debug("Occupancy threshold set to {}".format(self.occupancy_threshold))
 
 
 
@@ -376,9 +377,9 @@ class ImageProcessor(object):
 
         self.color_classifier.fit(training_data, training_labels)
 
-        self.square_classifier = KNeighborsClassifier()
-        training_labs = [1 for _ in range(2*8)] + [0 for _ in range (4*8)] + \
-            [1 for _ in range(2*8)]
+        self.square_classifier = SVC()
+        training_labs = [True for _ in range(2*8)] + [False for _ in range (4*8)] + \
+            [True for _ in range(2*8)]
 
         features = self.extract_features(img, n_features=5)
         self.square_classifier.fit(features, training_labs)
@@ -424,23 +425,6 @@ class ImageProcessor(object):
                 images_matrix[i, j] = square_image
         return images_matrix
 
-
-    def calibrate_occupancy_threshold(self):
-        binary_diff_image = \
-            self.compute_binary_diff_image(self.starting_pos_img)
-        binary_diff_squares = self.cut_squares(binary_diff_image, self._edges)
-
-        min_ratio_occupied = 1. ; max_ratio_empty = 0.
-
-        for i,j in itertools.product(range(8), range(8)):
-            square = binary_diff_squares[i, j]
-            ratio = np.sum(square) / square.size
-            if i in {0,1,6,7}:
-                min_ratio_occupied = min(min_ratio_occupied, ratio)
-            else:
-                max_ratio_empty = max(max_ratio_empty, ratio)
-
-        self.occupancy_threshold = (max_ratio_empty + min_ratio_occupied) / 2
 
     def extract_features(self, img, n_features=5):
         features = np.zeros((64, n_features))
