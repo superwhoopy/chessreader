@@ -321,7 +321,7 @@ class ImageProcessor(object):
         binary_diff_squares = self.cut_squares(
                 self.compute_binary_diff_image(img), self._edges)
 
-        # TODO: smells like shit...
+        # TODO: seems suspicious
 
         for k, index in enumerate(pieces_indices):
             square = initial_squares[index]
