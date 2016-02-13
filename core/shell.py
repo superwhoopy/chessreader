@@ -36,8 +36,11 @@ class Shell(cmd.Cmd):
         # parse the options
         args_list = arg.split()
         if self.OPT_MOCK in args_list:
-            test_images = \
-                tests.utils.collect_test_images('tests/pictures/game000')
+            # test_images = \
+            #     tests.utils.collect_test_images('tests/pictures/game000')
+            test_images = [ 'tests/pictures/game001/empty.jpg',
+                            'tests/pictures/game001/start.jpg' ] + \
+                    tests.utils.collect_test_images('tests/pictures/game001')
             capture_engine = capture.Mock(test_images)
         else:
             capture_engine = None

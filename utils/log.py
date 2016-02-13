@@ -10,6 +10,7 @@ do_show_debug_messages = False
 def multiline(func_call):
     '''TODO'''
     def _f(msg):
+        msg = str(msg)
         for line in msg.split('\n'):
             func_call(line)
     return _f

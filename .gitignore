@@ -2,6 +2,7 @@
 .pydevproject
 .idea
 .env
+imgprocessor/trace_images
 */.ipynb_checkpoints
 gnuchess.log
 env/

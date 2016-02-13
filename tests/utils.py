@@ -60,7 +60,7 @@ def natural_sort(l):
 
 @nose.tools.nottest
 def collect_test_images(dir_path):
-    image_regex = re.compile('board-[0-9]+\.jpg')
+    image_regex = re.compile('board-[0-9]{3}-[0-1]\.jpg')
     images = [os.path.join(dir_path, f) for f in os.listdir(dir_path)
               if image_regex.match(f)]
-    return natural_sort(images)  # board-0.jpg, board-1.jpg, ...
+    return natural_sort(images)  # board-001-0.jpg, board-001-1.jpg, ...
