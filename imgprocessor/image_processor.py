@@ -269,21 +269,36 @@ class ImageProcessor(object):
 
         A horizontal line is therefore one with θ=±π/2, and a vertical line is
         one with θ=0.
+        Also, two lines are parallel iif they have the same θ (mod π/2).
 
-        Finally, two lines are parallel iif they have the same θ (mod π/2).
+        Finally, in scikit-image, keep in mind that the orientation is :
+
+                                O----->
+                                |     (x axis)
+                                |
+                                V (y axis)
+
+        (where the origin is the top-left corner of our image)
+        And as a consequence, positive angles are counted from the X axis toward
+        the Y axis (i.e. "clockwise").
         '''
+
         for intensity, theta, r in zip(*hough_peaks):
             if np.fabs(theta) < self.LINE_ANGLE_TOLERANCE:
                 vertical_lines.append((intensity, theta, r))
             elif np.fabs(np.fabs(theta) - math.pi / 2) < self.LINE_ANGLE_TOLERANCE:
                 horizontal_lines.append((intensity, theta, r))
 
-        # only keep the 9 most significant lines of each direction and sort
-        # them by radius, to return edges from top to bottom, and left to right
-        for lines in (horizontal_lines, vertical_lines):
-            lines.sort(reverse=True)               # reverse-sort by intensity
-            del lines[9:]                          # only keep the 9 first
-            lines.sort(key=operator.itemgetter(2)) # sort them by radius
+        '''
+        Only keep the 9 most significant lines of each direction and sort
+        them by absolute radius, to return edges from top to bottom,
+        and left to right. We sort by *absolute* radius because horizontal
+        lines can be parametrized either as 'θ=π/2, r>0' or 'θ=-π/2, r<0'
+        '''
+        for i,lines in enumerate((horizontal_lines, vertical_lines)):
+            lines.sort(reverse=True)   # reverse-sort by intensity
+            del lines[9:]              # only keep the 9 first
+            lines.sort(key=lambda entry: np.fabs(entry[2]))  # sort by absolute radius
 
         '''
         Now let's find the intersections of these 18 lines.
@@ -310,6 +325,12 @@ class ImageProcessor(object):
 
         hough_lines = horizontal_lines + vertical_lines
         # TODO we don't check that we get 9x9 intersections...
+
+        '''
+        Since the horizontal and vertical lines have been sorted by increasing
+        value of |r|, the intersections are now sorted from top-left to bottom-right
+        corner of the image.
+        '''
         return np.array(intersections), hough_lines
 
 
@@ -336,8 +357,8 @@ class ImageProcessor(object):
 
         # 32 pieces (16 black, 16 white), 3 color channels
         training_data = np.zeros((32, 3))
-        training_labels = [WHITE for _ in range(16)] + \
-                          [BLACK for _ in range(16)]
+        training_labels = [BLACK for _ in range(16)] + \
+                          [WHITE for _ in range(16)]
         pieces_indices = [(i, j) for i in [0, 1, 6, 7] for j in range(8)]
 
         binary_diff_squares = self.cut_squares(
@@ -368,20 +389,30 @@ class ImageProcessor(object):
 
         Returns:
             an 8x8 matrix where each entry is a square image (with the same
-            dtype as `input_image`)
+            dtype as `input_image`). The entry at [0,0] corresponds to the
+            top-left square on the chessboard.
         """
         images_matrix = np.empty((8, 8), dtype=object)
         edges_matrix = np.reshape(edges, (9, 9, 2))
 
         for i in range(8):
             for j in range(8):
+                ''' Bear in mind that:
+                            0-----------> (x)
+                            | * (top-left)
+                            |
+                            |      * (bottom-right)
+                            |
+                            V (y)
+                '''
                 top_left = edges_matrix[i][j]
                 bottom_right = edges_matrix[i + 1][j + 1]
-                x_low = floor(top_left[0])     ; x_high = ceil(bottom_right[0])
-                y_low = floor(bottom_right[1]) ; y_high = ceil(top_left[1])
-                assert x_low < x_high
-                assert y_low < y_high
-                square_image = input_image[ y_low:y_high, x_low:x_high ]
+                x_top_left, y_top_left = map(lambda n: int(round(n)), top_left)
+                x_bottom_right, y_bottom_right = map(lambda n: int(round(n)), bottom_right)
+                assert x_top_left < x_bottom_right
+                assert y_top_left < y_bottom_right
+                square_image = input_image[ y_top_left:y_bottom_right,
+                                            x_top_left:x_bottom_right ]
                 images_matrix[i, j] = square_image
         return images_matrix
 
@@ -509,7 +540,8 @@ class ImageProcessor(object):
             raise ImageProcessorException(
                 "The `.process` method has not been called on this object yet")
         occupied_squares = {}
-        for (row, col), entry in np.ndenumerate(self._blindboard_matrix):
+        for (i, j), entry in np.ndenumerate(self._blindboard_matrix):
+            col = j ; row = 7-i
             if entry is not None:
                 occupied_squares[chess.square(col, row)] = bool(entry)
 
@@ -547,8 +579,7 @@ class ImageProcessor(object):
         fig, axes = plt.subplots(nrows=8, ncols=8)
         for i in range(8):
             for j in range(8):
-                col = 7-i; row = j
-                axes[i][j].imshow(matrix[col, row], cmap=plt.cm.gray)
+                axes[i][j].imshow(matrix[i, j], cmap=plt.cm.gray)
                 axes[i][j].axis('off')
         plt.plot()
         plt.savefig(file_path)
