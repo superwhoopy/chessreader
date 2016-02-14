@@ -13,6 +13,7 @@ from chess import BLACK, WHITE
 import numpy as np
 import matplotlib.pyplot as plt
 
+import skimage
 from skimage.filters import threshold_otsu
 from sklearn.decomposition import PCA
 from skimage import feature, io, color, exposure, transform
@@ -460,19 +461,29 @@ class ImageProcessor(object):
         return occupancy_matrix
 
 
-    def compute_binary_diff_image(self, new_image):
+    def compute_binary_diff_image(self, new_image, binary=True):
         """
         Compute an Otsu-thresholded image corresponding to the
         absolute difference between the empty chessboard image and the
         current image.
         """
-        adj_start_image = exposure.adjust_gamma(
-                        color.rgb2gray(self.empty_chessboard_image), 0.1)
-        # gamma values have a strong impact on classification
-        adj_image = exposure.adjust_gamma(color.rgb2gray(new_image), 0.1)
-        diff_image = exposure.adjust_gamma(np.abs(adj_image - adj_start_image),
-                                           0.3)
-        return diff_image > threshold_otsu(diff_image)
+        empty = color.rgb2gray(self.empty_chessboard_image)
+        new = color.rgb2gray(new_image)
+
+        new1 = exposure.adjust_sigmoid(new)
+        empty1 = exposure.adjust_sigmoid(empty)
+        diff1 = np.fabs(new1 - empty1)
+
+        new2 = exposure.adjust_sigmoid(new, cutoff=0.0001)
+        empty2 = exposure.adjust_sigmoid(empty, cutoff=0.0001)
+        diff2 = np.fabs(new2 - empty2)
+
+        diff = np.fmax(exposure.rescale_intensity(diff1),
+                       exposure.rescale_intensity(diff2))
+
+        diff = exposure.adjust_sigmoid(diff, cutoff=0.1)
+
+        return diff > threshold_otsu(diff) if binary else diff
 
 
     def compute_blindboard_matrix(self):
@@ -522,7 +533,7 @@ class ImageProcessor(object):
     @staticmethod
     def load_image(img_path, resize=True, resize_width=500):
         '''TODO'''
-        img = io.imread(img_path)
+        img = skimage.img_as_float(io.imread(img_path))
 
         if resize:
             x2    = resize_width
@@ -557,6 +568,7 @@ class ImageProcessor(object):
         colors = ["brown" if k == BLACK else "beige" for k in labels]
         plt.scatter(X_r[:, 0], X_r[:, 1], color=colors, edgecolors="black")
         plt.savefig(os.path.join(basedir, "colors_pca.png"))
+        plt.close()
 
     def plot_chessboard_with_edges(self, chessboard_image):
         plt.imshow(chessboard_image, cmap=plt.cm.gray)
@@ -573,6 +585,7 @@ class ImageProcessor(object):
 
         plt.axis((0, n_cols, n_rows, 0))
         plt.savefig(os.path.join(self.TRACE_DIR, "edges_and_squares.png"))
+        plt.close()
 
     @staticmethod
     def plot_square_images(matrix, file_path):
@@ -583,6 +596,7 @@ class ImageProcessor(object):
                 axes[i][j].axis('off')
         plt.plot()
         plt.savefig(file_path)
+        plt.close()
 
     @staticmethod
     def _plot_all_lines(img, peaks, imgname="all_lines.png"):
@@ -597,12 +611,49 @@ class ImageProcessor(object):
 
         plt.axis((0, cols, rows, 0))
         plt.savefig(os.path.join(ImageProcessor.TRACE_DIR, imgname))
+        plt.close()
 
     def save_image(self, name, image, path=None):
         if path is None:
             path = self.temp_image_dir
         plt.imsave(os.path.join(path, name), image, cmap=plt.cm.gray)
+        plt.close()
 
+
+def show(img):
+    plt.imshow(img, cmap=plt.cm.gray)
+
+def image_max(img1, img2):
+    return np.fmax(exposure.rescale_intensity(img1), exposure.rescale_intensity(img2))
+
+def apply_to_squares(input_image, edges, func):
+
+    output_image = np.copy(input_image)
+    edges_matrix = np.reshape(edges, (9, 9, 2))
+
+    for i in range(8):
+        for j in range(8):
+            ''' Bear in mind that:
+                        0-----------> (x)
+                        | * (top-left)
+                        |
+                        |      * (bottom-right)
+                        |
+                        V (y)
+            '''
+            top_left = edges_matrix[i][j]
+            bottom_right = edges_matrix[i + 1][j + 1]
+            x_top_left, y_top_left = map(lambda n: int(round(n)), top_left)
+            x_bottom_right, y_bottom_right = map(lambda n: int(round(n)), bottom_right)
+            assert x_top_left < x_bottom_right
+            assert y_top_left < y_bottom_right
+
+            square_image = func(input_image[ y_top_left:y_bottom_right,
+                                        x_top_left:x_bottom_right ])
+            output_image[ y_top_left:y_bottom_right, x_top_left:x_bottom_right ] = \
+                square_image
+
+    return output_image
 
 if __name__ == "__main__":
     import utils
