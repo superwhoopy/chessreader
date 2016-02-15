@@ -111,7 +111,7 @@ class ImageProcessor(object):
     '''name of directory where intermediary images will be stored'''
 
     def __init__(self, empty_board_path=None, starting_board_path=None,
-            trace=False, verbose=False):
+            trace=False):
         """
         Class constructor. Should be called only once at the start of the game.
         Requires the image of the empty chessboard and the image of the
@@ -123,7 +123,6 @@ class ImageProcessor(object):
             TODO
         """
 
-        self.verbose                  = verbose
         self.trace                    = trace
 
         self.image                    = None
@@ -463,6 +462,14 @@ class ImageProcessor(object):
 
         return occupancy_matrix
 
+    def _compute_diff_image(self, new_image):
+        adj_start_image = exposure.adjust_gamma(
+                        color.rgb2gray(self.empty_chessboard_image), 0.1)
+        # gamma values have a strong impact on classification
+        adj_image = exposure.adjust_gamma(color.rgb2gray(new_image), 0.1)
+        diff_image = exposure.adjust_gamma(np.abs(adj_image - adj_start_image),
+                                           0.3)
+        return diff_image
 
     def compute_binary_diff_image(self, new_image):
         """
@@ -470,12 +477,7 @@ class ImageProcessor(object):
         absolute difference between the empty chessboard image and the
         current image.
         """
-        adj_start_image = exposure.adjust_gamma(
-                        color.rgb2gray(self.empty_chessboard_image), 0.1)
-        # gamma values have a strong impact on classification
-        adj_image = exposure.adjust_gamma(color.rgb2gray(new_image), 0.1)
-        diff_image = exposure.adjust_gamma(np.abs(adj_image - adj_start_image),
-                                           0.3)
+        diff_image = self._compute_diff_image(new_image)
         return diff_image > threshold_otsu(diff_image)
 
 
