@@ -16,6 +16,9 @@ ARG_TEST_HELP = \
 ARG_DEBUG_HELP = \
     'Display debugging messages to stdout'
 
+
+PARSED_ARGS = None
+
 def parse_arguments():
     '''Parse command-line arguments and return the parsed output'''
     parser = argparse.ArgumentParser(description=ARG_MAIN_HELP)
@@ -28,19 +31,16 @@ def parse_arguments():
 
 ################################################################################
 
-def main(parsed_args):
-    '''Launch function
 
-        parsed_args: `argparse`-parsed command line arguments
-    '''
+def main():
+    '''Launch function'''
     colorama.init()
 
-    # Enable debug messages?
-    utils.log.do_show_debug_messages = parsed_args.debug
+    utils.log.do_show_debug_messages = PARSED_ARGS.debug
 
     # Launch test suite?
-    if parsed_args.test:
-        utils.log.info("running chessreader test base")
+    if PARSED_ARGS.test:
+        log.info("running chessreader test base")
         tests.run()
         sys.exit(0)
 
@@ -52,5 +52,5 @@ def main(parsed_args):
 
 if __name__ == '__main__':
     PARSED_ARGS = parse_arguments()
-    main(PARSED_ARGS)
+    main()
 

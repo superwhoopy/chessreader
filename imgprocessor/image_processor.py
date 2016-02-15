@@ -127,6 +127,8 @@ class ImageProcessor(object):
         self.trace                    = trace
 
         self.image                    = None
+        self.starting_pos_img         = None
+        self.empty_chessboard_image   = None
         self.temp_image_dir           = None
         self._hough_lines             = None
 
@@ -134,6 +136,7 @@ class ImageProcessor(object):
         self._processed_square_images = None
         self._occupancy_matrix        = None
         self._blindboard_matrix       = None
+        self.occupancy_threshold      = 0.
 
         self.color_classifier         = None
 
@@ -407,8 +410,9 @@ class ImageProcessor(object):
                 '''
                 top_left = edges_matrix[i][j]
                 bottom_right = edges_matrix[i + 1][j + 1]
-                x_top_left, y_top_left = map(lambda n: int(round(n)), top_left)
-                x_bottom_right, y_bottom_right = map(lambda n: int(round(n)), bottom_right)
+                x_top_left, y_top_left = (int(round(n)) for n in top_left)
+                x_bottom_right, y_bottom_right = \
+                        (int(round(n)) for n in bottom_right)
                 assert x_top_left < x_bottom_right
                 assert y_top_left < y_bottom_right
                 square_image = input_image[ y_top_left:y_bottom_right,
