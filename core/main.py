@@ -53,13 +53,13 @@ class Core(cmd.Cmd):
         '''TODO'''
         # whether live analysis is on or off, perform calibration now
         self._calibration()
-        log.info("The game is on!")
+        print("The game is on!")
 
     def do_next(self, _):
         '''TODO'''
         # make sure the game is still on
         if self.current_board.is_game_over():
-            log.warn('Game is over! Type "help" to see authorized commands')
+            print('Game is over! Type "help" to see authorized commands')
 
         # img capture!
         img_path = self._get_img_name()
@@ -105,17 +105,18 @@ class Core(cmd.Cmd):
         empty_img = os.path.join(self.game_folder, 'empty.jpg')
         start_img = self._get_img_name()
 
-        log.info("Prepare the empty chessboard and press Enter")
+        print("Prepare the empty chessboard and press Enter")
         input()
         self.capture_engine.capture(empty_img)
-        log.info("Prepare the chessboard in starting position "
+        print("Prepare the chessboard in starting position "
                  "and press Enter")
         input()
         self.capture_engine.capture(start_img)
 
         if self.do_live_analysis:
-            log.info("Calibrating image processor, please wait...")
-            self.image_processor = ImageProcessor(empty_img, start_img)
+            log.info("Calibrating image processor...")
+            self.image_processor = ImageProcessor(empty_img, start_img,
+                    trace=True)
             log.info("Calibration completed")
         else:
             log.info('Delaying image processor calibration')

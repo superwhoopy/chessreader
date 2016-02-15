@@ -1,10 +1,8 @@
 import cmd
-import os
 import sys
 
 import capture, utils, tests, core
-from core.main import IllegalMove
-from imgprocessor import ImageProcessor
+from utils import log
 
 
 class Shell(cmd.Cmd):
@@ -26,12 +24,12 @@ class Shell(cmd.Cmd):
 
     def do_test(self, arg):
         'Run the chessreader test suite'
-        utils.log.info('Running the test suite')
+        log.info('Running the test suite')
         tests.run()
 
     def do_start(self, arg):
         'Start a new game'
-        utils.log.info("Starting new game!")
+        print("Starting new game!")
 
         # parse the options
         args_list = arg.split()
@@ -41,6 +39,8 @@ class Shell(cmd.Cmd):
             test_images = [ 'tests/pictures/game001/empty.jpg',
                             'tests/pictures/game001/start.jpg' ] + \
                     tests.utils.collect_test_images('tests/pictures/game001')
+            log.debug('start mocking-game with {} files'.
+                    format(len(test_images)))
             capture_engine = capture.Mock(test_images)
         else:
             capture_engine = None
@@ -57,7 +57,6 @@ class Shell(cmd.Cmd):
 
     def do_quit(self, arg):
         'Leave the shell and end the program'
-        # TODO ask for confirmation if ongoing game
         utils.log.info("Bye!")
         sys.exit(0)
 
