@@ -316,14 +316,16 @@ class ImageProcessor(object):
         intersections = []
         for _, theta1, r1 in horizontal_lines:
             for _, theta2, r2 in vertical_lines:
-                # don't attempt to compute the intersection if the lines are parallel
+                # don't attempt to compute the intersection if the lines are
+                # parallel
                 denum = np.sin(theta2 - theta1)
                 if denum < self.ANGLE_EPSILON:
                     continue
                 x_inter = (r1 * np.sin(theta2) - r2 * np.sin(theta1)) / denum
                 y_inter = (r2 * np.cos(theta1) - r1 * np.cos(theta2)) / denum
                 # register this intersection iff. it is *inside* the image
-                if 0 < x_inter < image.shape[1] and 0 < y_inter < image.shape[0]:
+                if 0 < x_inter < image.shape[1] and \
+                        0 < y_inter < image.shape[0]:
                     intersections.append((x_inter, y_inter))
 
         hough_lines = horizontal_lines + vertical_lines

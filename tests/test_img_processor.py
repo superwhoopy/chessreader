@@ -1,14 +1,9 @@
 import os
-import re
-import nose
+# import nose
 
-import chess
-from chess import Piece, PAWN, WHITE, BLACK
-
-from chessboard.board import BlindBoard
-from .utils import collect_test_images
-from imgprocessor import ImageProcessor
 from utils.log import debug, warn
+from imgprocessor import ImageProcessor
+import tests.utils
 
 
 def compare_blindboards(expected, actual, file_name=None):
@@ -21,67 +16,35 @@ def compare_blindboards(expected, actual, file_name=None):
         warn("But found instead:")
         warn(actual)
         raise AssertionError("BlindBoards are different")
-        return False
     return True
 
 
-# TODO store the game as a PGN instead ?
-def expected_boards():
-    '''This generator returns all the BlindBoards corresponding to the
-    images inside ./pictures (starting with board-2.jpg)'''
-    b = BlindBoard.get_starting_board()
-    b.move_piece(chess.E2, chess.E4)
-    yield b  # board-2.jpg
-    b.move_piece(chess.E7, chess.E5)
-    yield b
-    b.move_piece(chess.G1, chess.F3)
-    yield b
-    b.move_piece(chess.B8, chess.C6)
-    yield b
-    b.move_piece(chess.F1, chess.B5)
-    yield b
-    b.move_piece(chess.G8, chess.F6)
-    yield b
-    b.move_piece(chess.E1, chess.F1)
-    b.move_piece(chess.H1, chess.G1)
-    yield b
-    b.remove_piece_at(chess.F6)
-    b.change_color_at(chess.E4)
-    yield b
-    b.move_piece(chess.D1, chess.E2)
-    yield b
-    b.move_piece(chess.D7, chess.D5)
-    yield b
-    b.remove_piece_at(chess.F3)
-    b.change_color_at(chess.E5)
-    yield b
-    b.move_piece(chess.C8, chess.D7)
-    yield b
-    b.remove_piece_at(chess.E5)
-    b.change_color_at(chess.C6)
-    yield b
-    b.remove_piece_at(chess.B7)
-    b.change_color_at(chess.C6)
-    yield b
-    b.move_piece(chess.B5, chess.D3)
-    yield b
+PGN_FILENAME = 'game.pgn'
+def process_game(dirpath):
+    pgn_file = os.path.join(dirpath, PGN_FILENAME)
+    expected_blind_boards = \
+        list(tests.utils.boards_from_pgn(pgn_file, use_blindboards=True))
+    images = tests.utils.collect_test_images(dirpath)
 
-# uncomment the following line to disable the image processor test
-# @nose.tools.nottest
-def test_imgage_processor():
-    '''Test image processor (multiple tests)'''
-
-    expected_board = BlindBoard.get_starting_board()
-    expected_board.remove_piece_at(chess.E2)
-    expected_board.set_piece_at(chess.E4, Piece(PAWN, WHITE))
-
-    # retrieve all the images paths and sort
-    images = collect_test_images('tests/pictures/game000')
     debug("Calibrating image processor...")
     processor = ImageProcessor(images[0], images[1])
 
-    for img, expected_board in zip(images[2:], expected_boards()):
+    for img, expected_board in zip(images[1:], expected_blind_boards):
         debug("Processing `{}`...".format(os.path.basename(img)))
         processor.process(img)
-        board = processor.get_blindboard()
-        yield compare_blindboards, expected_board, board, img
+        processed_board = processor.get_blindboard()
+        yield compare_blindboards, expected_board, processed_board, img
+
+
+
+# @nose.tools.nottest
+def test_imgage_processor():
+    '''Test image processor (multiple tests)'''
+    # retrieve all the images paths and sort
+    dirs = ( os.path.join('tests/pictures/', game) \
+                for game in ['game000', 'game001'] )
+
+    # utils.log.do_show_debug_messages = True
+    for dirpath in dirs:
+        yield from process_game(dirpath)
+

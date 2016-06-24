@@ -121,15 +121,31 @@ class BlindBoard(BaseBoard):
 
         return BlindBoard.Diff(emptied, filled, changed)
 
-    @staticmethod
-    def from_dict(occupied_squares):
+    @classmethod
+    def from_dict(cls, occupied_squares):
         '''
         Build a BlindBoard from a dictionary with the structure {square: color}
         '''
-        board = BlindBoard()
+        board = cls()
         for square, color in occupied_squares.items():
             board.set_piece_at(square, Piece(PAWN, color))
         return board
+
+    @classmethod
+    def from_board(cls, base_board):
+        '''
+        Takes as input a `Board` object and makes it 'blind' by turning all
+        pieces into pawns.
+        '''
+        blindboard = cls()
+
+        for color in (BLACK, WHITE):
+            occupied_squares = BlindBoard.Diff.get_squares_from_mask(
+                    base_board.occupied_co[color])
+            for square in occupied_squares:
+                blindboard.set_piece_at(square, color)
+
+        return blindboard
 
     @staticmethod
     def diff_board(board_to, board_from):

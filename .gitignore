@@ -7,3 +7,5 @@ imgprocessor/trace_images
 gnuchess.log
 env/
 tags
+.pydevproject
+.settings

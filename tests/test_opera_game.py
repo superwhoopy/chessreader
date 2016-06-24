@@ -3,7 +3,7 @@ import os
 import nose.tools
 
 import core.diffreader
-from .utils import read_boards_from_pgn, read_moves_from_pgn
+from .utils import boards_from_pgn, read_moves_from_pgn
 
 
 def test_opera():
@@ -12,7 +12,7 @@ def test_opera():
 
     opera_game = os.path.join(os.path.split(__file__)[0], 'games/opera.pgn')
     # read the boards from the PGN and turn them into BlindBoards
-    blind_boards = list(read_boards_from_pgn(opera_game, use_blindboards=True))
+    blind_boards = list(boards_from_pgn(opera_game, use_blindboards=True))
 
     # deduce the list of moves from the BlindBoards
     deduced_moves = [ core.diffreader.read(to_position.diff(from_position))
@@ -20,8 +20,7 @@ def test_opera():
                                                       blind_boards[1:])
     ]
 
-    # read the list of actual moves from the PGN and compare it to the deduced moves
+    # read the list of actual moves from the PGN and compare it to the deduced
+    # moves
     moves = list(read_moves_from_pgn(opera_game))
     nose.tools.eq_(moves, deduced_moves)
-
-    # TODO play the game with gnuchess?

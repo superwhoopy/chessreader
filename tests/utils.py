@@ -8,48 +8,30 @@ from chess import Board, Piece, BLACK, WHITE, PAWN
 from chessboard import BlindBoard
 
 
-def read_boards_from_pgn(pgn_path, use_blindboards=False):
-    '''
-    Generator function that takes as input the path to a PGN file
-    and returns an iterator over `Board` or `BlindBoard` objects describing the game
-    '''
-    def _convert(board):
-        if use_blindboards:
-            return board_to_blindboard(board)
-        else:
-            return board
-
+def boards_from_pgn(pgn_path, use_blindboards=False):
+    '''TODO'''
     with open(pgn_path, 'r') as pgn_file:
-        node = chess.pgn.read_game(pgn_file)
-        while node.variations:
-            yield _convert(node.board())
-            node = node.variation(0)
-        yield _convert(node.board())
+        def _recurse(node):
+            yield BlindBoard.from_board(node.board()) if use_blindboards else \
+                  node.board()
+
+            if node.is_end():
+                return
+            assert len(node.variations) <= 1
+            yield from _recurse(node.variations[0])
+
+        root_node = chess.pgn.read_game(pgn_file)
+        yield from _recurse(root_node)
 
 
 def read_moves_from_pgn(pgn_path):
+    '''TODO'''
     with open(pgn_path, 'r') as pgn_file:
         node = chess.pgn.read_game(pgn_file)
         while node.variations:
-            next_node = node.variation(0)
+            next_node = node.variations[0]
             yield next_node.move
             node = next_node
-
-
-def board_to_blindboard(board):
-    '''
-    Takes as input a `Board` object and makes it 'blind' by turning all pieces into pawns.
-    '''
-    assert isinstance(board, Board)
-    blindboard = BlindBoard()
-
-    for color in (BLACK, WHITE):
-        # occupied_pieces is a set of integers
-        occupied_squares = BlindBoard.Diff.get_squares_from_mask(board.occupied_co[color])
-        for square in occupied_squares:
-            blindboard.set_piece_at(square, Piece(PAWN, color))
-
-    return blindboard
 
 
 def natural_sort(l):
